@@ -1,0 +1,19 @@
+// Re-export all components from organized structure
+export { default as ErrorBoundary } from './ErrorBoundary';
+
+// Layout components
+export { default as Dashboard } from './layout/Dashboard';
+export { default as LedgerTable } from './layout/LedgerTable';
+export { default as Auth } from './layout/Auth';
+
+// Form components
+export { default as EntryForm } from './forms/EntryForm';
+
+// Canvas components
+export { default as PenCanvas } from '../features/pen-input/PenCanvas';
+
+// Feature components
+export { default as Reports } from '../features/reports/Reports';
+export { default as CreditManager } from '../features/payments/CreditManager';
+export { default as UPIIntegration } from '../features/payments/UPIIntegration';
+export { default as WhatsAppShare } from '../features/payments/WhatsAppShare';

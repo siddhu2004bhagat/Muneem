@@ -1,0 +1,218 @@
+// Paper templates for different ledger formats
+import { LedgerFormatId } from '@/features/ledger-formats';
+
+export interface PaperTemplate {
+  id: LedgerFormatId;
+  name: string;
+  backgroundColor: string;
+  lineColor: string;
+  drawBackground: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
+}
+
+// Traditional Khata Book - Simple ruled lines
+const traditionalKhata: PaperTemplate = {
+  id: 'traditional-khata',
+  name: 'Traditional Khata Book',
+  backgroundColor: '#fefce8',
+  lineColor: '#d4d4a8',
+  drawBackground: (ctx, width, height) => {
+    // Fill background
+    ctx.fillStyle = '#fefce8';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw horizontal lines (like notebook paper)
+    ctx.strokeStyle = '#d4d4a8';
+    ctx.lineWidth = 1;
+    const lineSpacing = 40; // Space between lines
+    
+    for (let y = lineSpacing; y < height; y += lineSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    
+    // Draw vertical columns
+    const col1 = width * 0.15; // Date column
+    const col2 = width * 0.40; // Party column
+    const col3 = width * 0.70; // Details column
+    
+    ctx.strokeStyle = '#d4d4a8';
+    ctx.setLineDash([5, 5]); // Dashed lines
+    [col1, col2, col3].forEach(x => {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]); // Reset
+    
+    // Add column headers at top
+    ctx.fillStyle = '#78716c';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('Date', 10, 20);
+    ctx.fillText('Party Name', col1 + 10, 20);
+    ctx.fillText('Details', col2 + 10, 20);
+    ctx.fillText('Amount', col3 + 10, 20);
+  }
+};
+
+// Cash Book - Two column format
+const cashBook: PaperTemplate = {
+  id: 'cash-book',
+  name: 'Cash Book',
+  backgroundColor: '#fffbeb',
+  lineColor: '#fed7aa',
+  drawBackground: (ctx, width, height) => {
+    // Fill background
+    ctx.fillStyle = '#fffbeb';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw center line (divides Cash In / Cash Out)
+    const centerX = width / 2;
+    ctx.strokeStyle = '#fb923c';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX, 0);
+    ctx.lineTo(centerX, height);
+    ctx.stroke();
+    
+    // Draw horizontal lines
+    ctx.strokeStyle = '#fed7aa';
+    ctx.lineWidth = 1;
+    const lineSpacing = 40;
+    
+    for (let y = lineSpacing; y < height; y += lineSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    
+    // Add headers
+    ctx.fillStyle = '#9a3412';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Cash In (Receipt)', 10, 20);
+    ctx.fillText('Cash Out (Payment)', centerX + 10, 20);
+  }
+};
+
+// Double Entry - Jama/Kharcha
+const doubleEntry: PaperTemplate = {
+  id: 'double-entry',
+  name: 'Double Entry',
+  backgroundColor: '#f0fdf4',
+  lineColor: '#bbf7d0',
+  drawBackground: (ctx, width, height) => {
+    // Fill background
+    ctx.fillStyle = '#f0fdf4';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw columns: Date | Jama | Kharcha
+    const col1 = width * 0.25; // Date column
+    const col2 = width * 0.60; // Jama column
+    
+    ctx.strokeStyle = '#bbf7d0';
+    ctx.lineWidth = 1;
+    
+    // Vertical lines
+    [col1, col2].forEach(x => {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    });
+    
+    // Horizontal lines
+    const lineSpacing = 40;
+    for (let y = lineSpacing; y < height; y += lineSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    
+    // Add headers
+    ctx.fillStyle = '#166534';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('Date', 10, 20);
+    ctx.fillText('Jama (Credit)', col1 + 10, 20);
+    ctx.fillText('Kharcha (Debit)', col2 + 10, 20);
+  }
+};
+
+// Party Ledger - Customer accounts
+const partyLedger: PaperTemplate = {
+  id: 'party-ledger',
+  name: 'Party Ledger',
+  backgroundColor: '#f0f9ff',
+  lineColor: '#bae6fd',
+  drawBackground: (ctx, width, height) => {
+    // Fill background
+    ctx.fillStyle = '#f0f9ff';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw columns: Date | Party | Given | Received | Balance
+    const col1 = width * 0.15; // Date
+    const col2 = width * 0.35; // Party
+    const col3 = width * 0.55; // Given
+    const col4 = width * 0.75; // Received
+    
+    ctx.strokeStyle = '#bae6fd';
+    ctx.lineWidth = 1;
+    
+    // Vertical lines
+    [col1, col2, col3, col4].forEach(x => {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    });
+    
+    // Horizontal lines
+    const lineSpacing = 40;
+    for (let y = lineSpacing; y < height; y += lineSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+    
+    // Add headers
+    ctx.fillStyle = '#075985';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText('Date', 10, 20);
+    ctx.fillText('Party', col1 + 10, 20);
+    ctx.fillText('Given', col2 + 10, 20);
+    ctx.fillText('Received', col3 + 10, 20);
+    ctx.fillText('Balance', col4 + 10, 20);
+  }
+};
+
+// Plain paper
+const plainPaper: PaperTemplate = {
+  id: 'traditional-khata',
+  name: 'Plain Paper',
+  backgroundColor: '#ffffff',
+  lineColor: '#e5e5e5',
+  drawBackground: (ctx, width, height) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+  }
+};
+
+export const PAPER_TEMPLATES: Record<LedgerFormatId, PaperTemplate> = {
+  'traditional-khata': traditionalKhata,
+  'cash-book': cashBook,
+  'double-entry': doubleEntry,
+  'party-ledger': partyLedger,
+  'day-book': traditionalKhata, // Use same as traditional
+  'stock-register': traditionalKhata, // Use same as traditional
+  'modern-minimal': plainPaper,
+  'hybrid-mix': traditionalKhata
+};
+
+export const getPaperTemplate = (formatId: LedgerFormatId): PaperTemplate => {
+  return PAPER_TEMPLATES[formatId] || traditionalKhata;
+};
+
