@@ -11,7 +11,7 @@
  * - Applies merge rules (prefer TFLite for numbers, Tesseract for text)
  */
 
-import type { OCRResult } from './ocrHybrid.worker';
+import type { OCRResult } from '../ocr/worker/tesseractWorker';
 
 export type { OCRResult };
 
@@ -213,7 +213,7 @@ export default class OCRHybridService {
 
     // Create worker from worker file
     this.worker = new Worker(
-      new URL('./ocrHybrid.worker.ts', import.meta.url),
+      new URL('../ocr/worker/tesseractWorker.ts', import.meta.url),
       { type: 'module' }
     );
 

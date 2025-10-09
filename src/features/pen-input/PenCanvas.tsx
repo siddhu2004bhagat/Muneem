@@ -14,6 +14,7 @@ import LassoOverlay from './components/LassoOverlay';
 import TextCorrectionOverlay from './components/TextCorrectionOverlay';
 import OCRResultsToast from './components/OCRResultsToast';
 import OCRConfirm from './ocr/components/OCRConfirm';
+import { postProcessOCRResult } from './ocr/postprocess';
 import { toast } from 'sonner';
 import ShapeSnapOverlay from './components/ShapeSnapOverlay';
 import { detectShape } from './services/shapeSnapper';
@@ -65,6 +66,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     text: string;
     confidence: number;
     imageHash: string;
+    processedFields?: any;
   } | null>(null);
 
   // Helper function to generate image hash for telemetry
@@ -135,11 +137,19 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
       // Generate image hash for telemetry
       const imageHash = await generateImageHash(imageData);
       
-      // Show OCR confirm dialog instead of immediate toast
+      // Apply post-processing pipeline BEFORE showing confirm dialog
+      const processedResult = postProcessOCRResult(
+        result.text,
+        result.confidence,
+        navigator.language || 'en-IN'
+      );
+      
+      // Show OCR confirm dialog with processed suggestions
       setCurrentOCRData({
         text: result.text,
         confidence: result.confidence,
-        imageHash
+        imageHash,
+        processedFields: processedResult
       });
       setShowOCRConfirm(true);
       

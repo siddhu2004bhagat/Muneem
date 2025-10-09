@@ -25,11 +25,18 @@ export interface OCRCorrection {
  * Stores OCR recognition results for analytics and debugging
  */
 export interface OCRTelemetry {
+  id: string;
   timestamp: number;
   imageHash: string;
   recognizedText: string;
-  confidence: number;
   correctedText?: string;
+  confidence: number;
+  format?: string;
+  deviceType?: string;
+  screenDPI?: number;
+  strokeCount?: number;
+  sessionId?: string;
+  userLang?: string;
   fields?: Record<string, string>;
 }
 
