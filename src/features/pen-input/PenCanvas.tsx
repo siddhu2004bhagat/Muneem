@@ -259,8 +259,8 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     }
   }, []);
 
-  // Handle OCR correction confirm
-  const handleOCRConfirm = useCallback(async (correctedBoxes: OCRResult[]) => {
+  // Handle OCR correction confirm (from TextCorrectionOverlay)
+  const handleCorrectionConfirm = useCallback(async (correctedBoxes: OCRResult[]) => {
     // PHASE C: Save corrections to correction.service
     const correctionService = getCorrectionService();
     await correctionService.initialize(); // Ensure initialized
@@ -323,7 +323,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
   }, [onRecognized, ocrResults]);
 
   // Handle OCR correction cancel
-  const handleOCRCancel = useCallback(() => {
+  const handleCorrectionCancel = useCallback(() => {
     setShowCorrectionOverlay(false);
     toast.info("Correction cancelled");
   }, []);
@@ -460,8 +460,8 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
           {showCorrectionOverlay && ocrResults.length > 0 && (
             <TextCorrectionOverlay
               boxes={ocrResults}
-              onConfirm={handleOCRConfirm}
-              onCancel={handleOCRCancel}
+              onConfirm={handleCorrectionConfirm}
+              onCancel={handleCorrectionCancel}
               onEdit={handleOCREdit}
             />
           )}
