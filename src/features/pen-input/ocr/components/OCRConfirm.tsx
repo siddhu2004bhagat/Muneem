@@ -110,7 +110,7 @@ export function OCRConfirm({
     return 'bg-red-100 text-red-800 border-red-200';
   };
 
-  const handleConfirm = useCallback(() => {
+  const handleConfirm = useCallback(async () => {
     // Validate required fields
     const requiredFields = ['date', 'amount'];
     const missingFields = requiredFields.filter(fieldId => {
@@ -123,13 +123,20 @@ export function OCRConfirm({
       return;
     }
 
-    // Log telemetry
+    // Extended telemetry with all fields
     const telemetry = {
+      id: `ocr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       timestamp: Date.now(),
       imageHash,
       recognizedText,
-      confidence,
       correctedText: fields.map(f => `${f.label}: ${f.value}`).join(', '),
+      confidence,
+      format: 'ledger-entry',
+      deviceType: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop',
+      screenDPI: window.devicePixelRatio * 96,
+      strokeCount: 0, // Will be populated by parent
+      sessionId: sessionStorage.getItem('sessionId') || `session_${Date.now()}`,
+      userLang: navigator.language || 'en-IN',
       fields: fields.reduce((acc, field) => {
         acc[field.id] = field.value;
         return acc;
@@ -137,8 +144,13 @@ export function OCRConfirm({
     };
 
     // Save to IndexedDB
-    await saveOCRTelemetry(telemetry);
+    try {
+      await saveOCRTelemetry(telemetry);
+    } catch (error) {
+      console.error('Failed to save telemetry:', error);
+    }
     
+    // Call parent callback - parent will handle ledger entry creation
     onConfirm(fields);
     toast.success('OCR result confirmed and saved');
   }, [fields, imageHash, recognizedText, confidence, onConfirm]);
