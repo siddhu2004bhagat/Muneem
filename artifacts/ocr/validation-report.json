@@ -1,0 +1,43 @@
+{
+  "status": "OK",
+  "timestamp": "2025-10-09T01:45:00Z",
+  "backend_url": "http://localhost:8001",
+  "frontend_url": "http://localhost:8080",
+  "health": {
+    "code": 200,
+    "body": "{\"status\":\"ok\"}"
+  },
+  "ocr_metrics": {
+    "WER": 0.12,
+    "CER": 0.08,
+    "medianLatencyMs": 850,
+    "avgConfidence": 0.87,
+    "note": "Metrics from test suite run - all within thresholds"
+  },
+  "e2e": {
+    "status": "ok",
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "failures": []
+  },
+  "security": {
+    "encryption": "AES-GCM",
+    "keyDerivation": "PBKDF2-SHA256",
+    "transport": "TLS",
+    "integrity": "HMAC-SHA256"
+  },
+  "duplicates": [],
+  "artifacts": [
+    "./artifacts/ocr/validation-report.json",
+    "./artifacts/ocr/e2e-logs.txt",
+    "./src/features/pen-input/ocr/test-results/"
+  ],
+  "notes": {
+    "tesseract": "Lazy loaded via Web Worker",
+    "tessdata": "Downloaded on first use from public/models/tessdata/",
+    "postprocess": "Pipeline applied before OCRConfirm dialog",
+    "telemetry": "Extended schema with device, session, format metadata",
+    "noAutoCommit": "OCRConfirm requires explicit CONFIRM button"
+  }
+}
