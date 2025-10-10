@@ -5,7 +5,7 @@
  * Integrates with NotebookContext for page management.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -16,9 +16,34 @@ import {
   BookOpen,
   Grid3x3,
   Trash2,
+  FileText,
+  Tags,
 } from 'lucide-react';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useNotebook } from '../context/NotebookContext';
 import { cn } from '@/lib/utils';
+import { TemplatePicker } from './templates/TemplatePicker';
+import { SectionManager } from './sections/SectionManager';
+import { NotebookGrid } from './NotebookGrid';
+import { NotebookPage, NotebookSection, listSections, savePage } from '@/lib/localStore';
+import { TemplateId } from '../types/template.types';
 
 interface NotebookNavProps {
   className?: string;
@@ -45,10 +70,35 @@ export function NotebookNav({
     createPage,
     deletePage,
     loading,
+    reloadCurrentPage,
   } = useNotebook();
   
   const [jumpToPage, setJumpToPage] = useState('');
   const [showJumpInput, setShowJumpInput] = useState(false);
+  
+  // Template picker state
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  
+  // Section manager state
+  const [showSectionManager, setShowSectionManager] = useState(false);
+  const [sections, setSections] = useState<NotebookSection[]>([]);
+  
+  // Grid view state
+  const [showGrid, setShowGrid] = useState(false);
+  
+  // Load sections
+  useEffect(() => {
+    loadSectionsData();
+  }, []);
+  
+  const loadSectionsData = async () => {
+    try {
+      const data = await listSections();
+      setSections(data);
+    } catch (error) {
+      console.error('[NotebookNav] Error loading sections:', error);
+    }
+  };
   
   const handleJumpToPage = () => {
     const pageNum = parseInt(jumpToPage, 10);
@@ -72,6 +122,53 @@ export function NotebookNav({
         await deletePage(currentPage.id);
       }
     }
+  };
+  
+  const handleTemplateSelect = async (templateId: TemplateId) => {
+    if (!currentPage) return;
+    
+    try {
+      // Update current page's template
+      const updatedPage = {
+        ...currentPage,
+        templateId,
+        updatedAt: Date.now(),
+      };
+      
+      await savePage(updatedPage);
+      await reloadCurrentPage();
+      setShowTemplatePicker(false);
+    } catch (error) {
+      console.error('[NotebookNav] Error updating template:', error);
+    }
+  };
+  
+  const handleSectionChange = async (sectionId: string) => {
+    if (!currentPage) return;
+    
+    try {
+      // Update current page's section
+      const updatedPage = {
+        ...currentPage,
+        sectionId: sectionId === 'none' ? undefined : sectionId,
+        updatedAt: Date.now(),
+      };
+      
+      await savePage(updatedPage);
+      await reloadCurrentPage();
+    } catch (error) {
+      console.error('[NotebookNav] Error updating section:', error);
+    }
+  };
+  
+  const handleSectionManagerClose = () => {
+    setShowSectionManager(false);
+    loadSectionsData(); // Reload sections after manager closes
+  };
+  
+  const handlePageSelectFromGrid = async (page: NotebookPage) => {
+    goToPageNumber(page.pageNumber);
+    setShowGrid(false);
   };
   
   if (loading) {
@@ -201,6 +298,64 @@ export function NotebookNav({
       
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
+        {/* Template Picker */}
+        <Popover open={showTemplatePicker} onOpenChange={setShowTemplatePicker}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-3"
+              title="Change template"
+            >
+              <FileText className="h-4 w-4 mr-1" />
+              <span className="capitalize">{currentPage?.templateId || 'lined'}</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <TemplatePicker
+              currentTemplateId={currentPage?.templateId || 'lined'}
+              onSelect={handleTemplateSelect}
+              onClose={() => setShowTemplatePicker(false)}
+            />
+          </PopoverContent>
+        </Popover>
+        
+        {/* Section Selector */}
+        <div className="flex items-center gap-1">
+          <Select
+            value={currentPage?.sectionId || 'none'}
+            onValueChange={handleSectionChange}
+          >
+            <SelectTrigger className="h-9 w-[140px]">
+              <SelectValue placeholder="No section" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No section</SelectItem>
+              {sections.map(section => (
+                <SelectItem key={section.id} value={section.id}>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: section.color }}
+                    />
+                    {section.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 p-0"
+            title="Manage sections"
+            onClick={() => setShowSectionManager(true)}
+          >
+            <Tags className="h-4 w-4" />
+          </Button>
+        </div>
+        
         {showDeleteButton && totalPages > 1 && (
           <Button
             variant="outline"
@@ -225,17 +380,40 @@ export function NotebookNav({
           </Button>
         )}
         
-        {/* Grid view button (placeholder for Phase 2) */}
+        {/* Grid view button */}
         <Button
           variant="outline"
           size="sm"
           className="h-9 w-9 p-0"
-          title="Grid view (coming soon)"
-          disabled
+          title="Grid view"
+          onClick={() => setShowGrid(true)}
         >
           <Grid3x3 className="h-4 w-4" />
         </Button>
       </div>
+      
+      {/* Dialogs */}
+      <Dialog open={showSectionManager} onOpenChange={setShowSectionManager}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Section Manager</DialogTitle>
+          </DialogHeader>
+          <SectionManager onClose={handleSectionManagerClose} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={showGrid} onOpenChange={setShowGrid}>
+        <DialogContent className="max-w-4xl h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>All Pages</DialogTitle>
+          </DialogHeader>
+          <NotebookGrid
+            currentPageId={currentPage?.id}
+            onSelectPage={handlePageSelectFromGrid}
+            onClose={() => setShowGrid(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

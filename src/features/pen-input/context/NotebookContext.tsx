@@ -36,6 +36,7 @@ interface NotebookContextType {
   deletePage: (pageId: string) => Promise<void>;
   updateCurrentPage: (updates: Partial<NotebookPage>) => Promise<void>;
   savePage: (page: NotebookPage) => Promise<void>;
+  reloadCurrentPage: () => Promise<void>;
   
   // Utility methods
   refreshPages: () => Promise<void>;
@@ -160,6 +161,8 @@ export function NotebookProvider({ children }: NotebookProviderProps) {
         id: `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         pageNumber: nextPageNumber,
         title: `Page ${nextPageNumber}`,
+        templateId: 'lined', // Default template
+        sectionId: undefined,
         strokes: [],
         shapes: [],
         entries: [],
@@ -266,6 +269,24 @@ export function NotebookProvider({ children }: NotebookProviderProps) {
     }
   }, [currentPage]);
   
+  /**
+   * Reload the current page from database (useful after external updates)
+   */
+  const reloadCurrentPage = useCallback(async () => {
+    if (!currentPage) return;
+    
+    try {
+      const reloadedPage = await loadPageFromDB(currentPage.id);
+      if (reloadedPage) {
+        setPages(prev => prev.map((p, idx) => 
+          idx === currentPageIndex ? reloadedPage : p
+        ));
+      }
+    } catch (error) {
+      console.error('[NotebookContext] Error reloading current page:', error);
+    }
+  }, [currentPage, currentPageIndex]);
+  
   const value: NotebookContextType = {
     pages,
     currentPageIndex,
@@ -280,6 +301,7 @@ export function NotebookProvider({ children }: NotebookProviderProps) {
     deletePage,
     updateCurrentPage,
     savePage,
+    reloadCurrentPage,
     refreshPages,
     canGoNext,
     canGoPrev,

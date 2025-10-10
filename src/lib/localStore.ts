@@ -48,6 +48,8 @@ export interface NotebookPage {
   id: string;
   pageNumber: number;
   title?: string;
+  templateId: string; // NEW: Template ID (blank, lined, columnar)
+  sectionId?: string; // NEW: Section ID for organization
   canvasDataURL?: string; // Base64 PNG snapshot
   strokes: any[]; // Stroke data for this page
   shapes: any[]; // Shape data for this page
@@ -69,6 +71,27 @@ export interface NotebookPageRow {
   updatedAt: number;
 }
 
+/**
+ * Notebook Section Interface (before encryption)
+ * Represents a section/category for organizing pages
+ */
+export interface NotebookSection {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: number;
+  order?: number;
+}
+
+export interface NotebookSectionRow {
+  id?: number;
+  sectionId: string;
+  payload: ArrayBuffer;
+  iv: ArrayBuffer;
+  salt: ArrayBuffer;
+  createdAt: number;
+}
+
 class PenDB extends Dexie {
   strokes!: Dexie.Table<StrokeRow, number>;
   shapes!: Dexie.Table<ShapeRow, number>;
@@ -76,6 +99,7 @@ class PenDB extends Dexie {
   ocrCorrections!: Dexie.Table<OCRCorrectionRow, number>;
   ocrTelemetry!: Dexie.Table<OCRTelemetryRow, number>;
   notebookPages!: Dexie.Table<NotebookPageRow, number>;
+  notebookSections!: Dexie.Table<NotebookSectionRow, number>;
   
   constructor() {
     super('digbahi_pen');
@@ -108,6 +132,16 @@ class PenDB extends Dexie {
       ocrCorrections: '++id, createdAt',
       ocrTelemetry: '++id, createdAt',
       notebookPages: '++id, pageId, pageNumber, createdAt, updatedAt',
+    });
+    // Version 5: Add notebookSections for page organization
+    this.version(5).stores({
+      strokes: '++id, createdAt',
+      shapes: '++id, createdAt',
+      ocr: '++id, createdAt',
+      ocrCorrections: '++id, createdAt',
+      ocrTelemetry: '++id, createdAt',
+      notebookPages: '++id, pageId, pageNumber, createdAt, updatedAt',
+      notebookSections: '++id, sectionId, createdAt',
     });
   }
 }
@@ -331,6 +365,8 @@ export async function ensureInitialPage(pin = '1234'): Promise<NotebookPage> {
       id: `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       pageNumber: 1,
       title: 'Page 1',
+      templateId: 'lined', // Default template
+      sectionId: undefined,
       strokes: [],
       shapes: [],
       entries: [],
@@ -346,5 +382,137 @@ export async function ensureInitialPage(pin = '1234'): Promise<NotebookPage> {
   // Return first page if it exists
   const firstPage = await loadPageByNumber(1, pin);
   return firstPage!;
+}
+
+/**
+ * Migration helper: Migrate pages to V2 (add templateId & sectionId)
+ * Non-destructive: only adds missing fields, preserves existing data
+ */
+export async function migratePagesToV2(pin = '1234'): Promise<{ migrated: number; skipped: number; errors: number }> {
+  const results = { migrated: 0, skipped: 0, errors: 0 };
+  
+  try {
+    const pages = await listPages(pin);
+    
+    for (const page of pages) {
+      try {
+        let needsMigration = false;
+        
+        // Add templateId if missing
+        if (!page.templateId) {
+          page.templateId = 'lined'; // defaultTemplateId
+          needsMigration = true;
+        }
+        
+        // Add sectionId if missing (set to undefined explicitly)
+        if (page.sectionId === undefined) {
+          page.sectionId = undefined;
+          needsMigration = true;
+        }
+        
+        if (needsMigration) {
+          await savePage(page, pin);
+          results.migrated++;
+          console.log(`[Migration] Migrated page ${page.pageNumber} (${page.id})`);
+        } else {
+          results.skipped++;
+        }
+      } catch (error) {
+        console.error(`[Migration] Error migrating page ${page.pageNumber}:`, error);
+        results.errors++;
+      }
+    }
+    
+    console.log(`[Migration] Complete: ${results.migrated} migrated, ${results.skipped} skipped, ${results.errors} errors`);
+    return results;
+  } catch (error) {
+    console.error('[Migration] Fatal error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create backup of all pages before migration
+ */
+export async function backupPagesBeforeMigration(pin = '1234'): Promise<string> {
+  try {
+    const pages = await listPages(pin);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupData = {
+      timestamp,
+      version: 'v1',
+      pages,
+      count: pages.length,
+    };
+    
+    // Return JSON string (caller will save to file)
+    return JSON.stringify(backupData, null, 2);
+  } catch (error) {
+    console.error('[Backup] Error creating backup:', error);
+    throw error;
+  }
+}
+
+// ============================================================================
+// NOTEBOOK SECTIONS HELPERS
+// ============================================================================
+
+/**
+ * Save a section to IndexedDB
+ */
+export async function saveSection(section: NotebookSection, pin = '1234'): Promise<number> {
+  const { payload, iv, salt } = await encryptObject(section, pin);
+  
+  // Check if section exists
+  const existingSection = await penDB.notebookSections
+    .where('sectionId')
+    .equals(section.id)
+    .first();
+  
+  if (existingSection) {
+    // Update existing
+    await penDB.notebookSections.update(existingSection.id!, {
+      payload,
+      iv,
+      salt,
+    });
+    return existingSection.id!;
+  } else {
+    // Create new
+    return penDB.notebookSections.add({
+      sectionId: section.id,
+      payload,
+      iv,
+      salt,
+      createdAt: Date.now(),
+    });
+  }
+}
+
+/**
+ * Load all sections
+ */
+export async function listSections(pin = '1234'): Promise<NotebookSection[]> {
+  const rows = await penDB.notebookSections
+    .orderBy('createdAt')
+    .toArray();
+  
+  return Promise.all(
+    rows.map(r => decryptObject<NotebookSection>(r.payload, r.iv, r.salt, pin))
+  );
+}
+
+/**
+ * Delete a section
+ */
+export async function deleteSection(sectionId: string): Promise<void> {
+  const row = await penDB.notebookSections
+    .where('sectionId')
+    .equals(sectionId)
+    .first();
+  
+  if (row?.id) {
+    await penDB.notebookSections.delete(row.id);
+  }
 }
 

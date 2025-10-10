@@ -22,6 +22,7 @@ import { usePenTool, PenToolProvider } from './context/PenToolContext';
 import { useNotebook } from './context/NotebookContext';
 import NotebookNav from './components/NotebookNav';
 import type { PenCanvasProps } from './types';
+import { drawTemplate } from './templates';
 
 interface RecognitionResult {
   text: string;
@@ -75,7 +76,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     text: string;
     confidence: number;
     imageHash: string;
-    processedFields?: any;
+    processedFields?: Record<string, unknown>;
   } | null>(null);
 
   // Helper function to generate image hash for telemetry
@@ -84,6 +85,34 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     const hashArray = Array.from(new Uint8Array(buffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
+
+  // Draw template on background canvas when page/template changes
+  useEffect(() => {
+    const bgCanvas = backgroundCanvasRef.current;
+    if (!bgCanvas || !currentPage) return;
+
+    const ctx = bgCanvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear background
+    ctx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+
+    // Draw template
+    const templateId = currentPage.templateId || 'lined';
+    const width = bgCanvas.width;
+    const height = bgCanvas.height;
+
+    try {
+      drawTemplate(ctx, width, height, templateId, {
+        lineSpacing: 30,
+        margin: 40,
+        columnCount: 4,
+        color: '#e0e0e0',
+      });
+    } catch (error) {
+      console.error('[PenCanvas] Error drawing template:', error);
+    }
+  }, [currentPage, backgroundCanvasRef]);
 
   const getPosition = (e: React.PointerEvent) => {
     const canvas = canvasRef.current!;
