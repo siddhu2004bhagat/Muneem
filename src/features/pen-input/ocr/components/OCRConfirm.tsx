@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Edit3, Calendar, DollarSign, User, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { saveOCRTelemetry } from '@/lib/localStore';
+import { hasConsent, saveConsent, shouldShowConsentModal } from '@/lib/consent';
+import { ConsentModal } from '@/components/ConsentModal';
 
 interface OCRField {
   id: string;
@@ -33,6 +35,9 @@ export function OCRConfirm({
   onConfirm, 
   onCancel 
 }: OCRConfirmProps) {
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [pendingTelemetry, setPendingTelemetry] = useState<any>(null);
+  
   // Parse recognized text to extract fields
   const parseTextToFields = useCallback((text: string): OCRField[] => {
     // Simple parsing logic - can be enhanced with ML
@@ -144,10 +149,24 @@ export function OCRConfirm({
     };
 
     // Save to IndexedDB
-    try {
-      await saveOCRTelemetry(telemetry);
-    } catch (error) {
-      console.error('Failed to save telemetry:', error);
+    // Check consent before saving telemetry
+    if (shouldShowConsentModal('ocr_telemetry')) {
+      // First time or policy changed - show consent modal
+      setPendingTelemetry(telemetry);
+      setShowConsentModal(true);
+      return;
+    }
+
+    if (hasConsent('ocr_telemetry')) {
+      // User has already consented - save telemetry
+      try {
+        await saveOCRTelemetry(telemetry);
+        console.log('[OCRConfirm] Telemetry saved with user consent');
+      } catch (error) {
+        console.error('Failed to save telemetry:', error);
+      }
+    } else {
+      console.log('[OCRConfirm] Telemetry not saved - user declined consent');
     }
     
     // Call parent callback - parent will handle ledger entry creation
@@ -155,13 +174,49 @@ export function OCRConfirm({
     toast.success('OCR result confirmed and saved');
   }, [fields, imageHash, recognizedText, confidence, onConfirm]);
 
+  const handleConsentDecision = useCallback(async (granted: boolean) => {
+    saveConsent('ocr_telemetry', granted);
+    setShowConsentModal(false);
+
+    if (granted && pendingTelemetry) {
+      // User granted consent - save the pending telemetry
+      try {
+        await saveOCRTelemetry(pendingTelemetry);
+        console.log('[OCRConfirm] Telemetry saved after consent granted');
+        toast.success('Thank you! Your data will help improve OCR accuracy.');
+      } catch (error) {
+        console.error('Failed to save telemetry:', error);
+      }
+    } else {
+      console.log('[OCRConfirm] User declined telemetry consent');
+      toast.info('OCR telemetry disabled. You can enable it anytime in Settings.');
+    }
+
+    setPendingTelemetry(null);
+    
+    // Continue with confirmation (ledger entry creation)
+    if (fields) {
+      onConfirm(fields);
+      toast.success('OCR result confirmed and saved');
+    }
+  }, [pendingTelemetry, fields, onConfirm]);
+
   const handleCancel = useCallback(() => {
     onCancel();
     toast.info('OCR result cancelled');
   }, [onCancel]);
 
   return (
-    <Card className="fixed inset-4 z-50 bg-background border shadow-2xl overflow-y-auto">
+    <>
+      {/* Consent Modal */}
+      <ConsentModal
+        open={showConsentModal}
+        onConsent={handleConsentDecision}
+        consentType="ocr_telemetry"
+      />
+
+      {/* Main OCR Confirm Dialog */}
+      <Card className="fixed inset-4 z-50 bg-background border shadow-2xl overflow-y-auto">
       <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -243,6 +298,7 @@ export function OCRConfirm({
         </div>
       </div>
     </Card>
+    </>
   );
 }
 

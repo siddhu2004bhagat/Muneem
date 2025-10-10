@@ -40,12 +40,42 @@ export interface OCRTelemetry {
   fields?: Record<string, string>;
 }
 
+/**
+ * Notebook Page Interface (before encryption)
+ * Represents a single page in the digital ledger book
+ */
+export interface NotebookPage {
+  id: string;
+  pageNumber: number;
+  title?: string;
+  canvasDataURL?: string; // Base64 PNG snapshot
+  strokes: any[]; // Stroke data for this page
+  shapes: any[]; // Shape data for this page
+  entries: any[]; // Ledger entries from OCR on this page
+  createdAt: number;
+  updatedAt: number;
+  tags?: string[];
+  sectionColor?: string; // For color-coded sections
+}
+
+export interface NotebookPageRow { 
+  id?: number; 
+  pageId: string; // Unique page ID
+  pageNumber: number; // For ordering
+  payload: ArrayBuffer; 
+  iv: ArrayBuffer; 
+  salt: ArrayBuffer; 
+  createdAt: number;
+  updatedAt: number;
+}
+
 class PenDB extends Dexie {
   strokes!: Dexie.Table<StrokeRow, number>;
   shapes!: Dexie.Table<ShapeRow, number>;
   ocr!: Dexie.Table<OcrRow, number>;
   ocrCorrections!: Dexie.Table<OCRCorrectionRow, number>;
   ocrTelemetry!: Dexie.Table<OCRTelemetryRow, number>;
+  notebookPages!: Dexie.Table<NotebookPageRow, number>;
   
   constructor() {
     super('digbahi_pen');
@@ -69,6 +99,15 @@ class PenDB extends Dexie {
       ocr: '++id, createdAt',
       ocrCorrections: '++id, createdAt',
       ocrTelemetry: '++id, createdAt',
+    });
+    // Version 4: Add notebookPages for multi-page support
+    this.version(4).stores({
+      strokes: '++id, createdAt',
+      shapes: '++id, createdAt',
+      ocr: '++id, createdAt',
+      ocrCorrections: '++id, createdAt',
+      ocrTelemetry: '++id, createdAt',
+      notebookPages: '++id, pageId, pageNumber, createdAt, updatedAt',
     });
   }
 }
@@ -171,5 +210,141 @@ export async function deleteOCRTelemetry(id: number) {
 export async function clearOldTelemetry(daysToKeep = 90) {
   const cutoff = Date.now() - daysToKeep * 24 * 60 * 60 * 1000;
   return penDB.ocrTelemetry.where('createdAt').below(cutoff).delete();
+}
+
+// ============================================================================
+// NOTEBOOK PAGES HELPERS (Phase 1 - Multi-Page Support)
+// ============================================================================
+
+/**
+ * Save a notebook page to IndexedDB
+ */
+export async function savePage(page: NotebookPage, pin = '1234'): Promise<number> {
+  const now = Date.now();
+  const pageData = {
+    ...page,
+    updatedAt: now,
+  };
+  
+  const { payload, iv, salt } = await encryptObject(pageData, pin);
+  
+  // Check if page exists
+  const existingPage = await penDB.notebookPages
+    .where('pageId')
+    .equals(page.id)
+    .first();
+  
+  if (existingPage) {
+    // Update existing page
+    await penDB.notebookPages.update(existingPage.id!, {
+      payload,
+      iv,
+      salt,
+      updatedAt: now,
+      pageNumber: page.pageNumber,
+    });
+    return existingPage.id!;
+  } else {
+    // Create new page
+    return penDB.notebookPages.add({
+      pageId: page.id,
+      pageNumber: page.pageNumber,
+      payload,
+      iv,
+      salt,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
+/**
+ * Load a specific page by pageId
+ */
+export async function loadPage(pageId: string, pin = '1234'): Promise<NotebookPage | null> {
+  const row = await penDB.notebookPages
+    .where('pageId')
+    .equals(pageId)
+    .first();
+  
+  if (!row) return null;
+  
+  return decryptObject<NotebookPage>(row.payload, row.iv, row.salt, pin);
+}
+
+/**
+ * Load a page by page number
+ */
+export async function loadPageByNumber(pageNumber: number, pin = '1234'): Promise<NotebookPage | null> {
+  const row = await penDB.notebookPages
+    .where('pageNumber')
+    .equals(pageNumber)
+    .first();
+  
+  if (!row) return null;
+  
+  return decryptObject<NotebookPage>(row.payload, row.iv, row.salt, pin);
+}
+
+/**
+ * List all pages (sorted by page number)
+ */
+export async function listPages(pin = '1234'): Promise<NotebookPage[]> {
+  const rows = await penDB.notebookPages
+    .orderBy('pageNumber')
+    .toArray();
+  
+  return Promise.all(
+    rows.map(r => decryptObject<NotebookPage>(r.payload, r.iv, r.salt, pin))
+  );
+}
+
+/**
+ * Delete a page by pageId
+ */
+export async function deletePage(pageId: string): Promise<void> {
+  const row = await penDB.notebookPages
+    .where('pageId')
+    .equals(pageId)
+    .first();
+  
+  if (row?.id) {
+    await penDB.notebookPages.delete(row.id);
+  }
+}
+
+/**
+ * Get total page count
+ */
+export async function getPageCount(): Promise<number> {
+  return penDB.notebookPages.count();
+}
+
+/**
+ * Create initial blank page if no pages exist
+ */
+export async function ensureInitialPage(pin = '1234'): Promise<NotebookPage> {
+  const count = await getPageCount();
+  
+  if (count === 0) {
+    const initialPage: NotebookPage = {
+      id: `page_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      pageNumber: 1,
+      title: 'Page 1',
+      strokes: [],
+      shapes: [],
+      entries: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      tags: [],
+    };
+    
+    await savePage(initialPage, pin);
+    return initialPage;
+  }
+  
+  // Return first page if it exists
+  const firstPage = await loadPageByNumber(1, pin);
+  return firstPage!;
 }
 

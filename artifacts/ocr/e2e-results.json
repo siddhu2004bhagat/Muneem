@@ -1,0 +1,16 @@
+{
+  "total": 7,
+  "passed": 7,
+  "failed": 0,
+  "failures": [],
+  "status": "ok",
+  "tests": [
+    { "name": "Health Check", "status": "PASS" },
+    { "name": "Ledger GET", "status": "PASS" },
+    { "name": "Create Entry (Device A)", "status": "PASS" },
+    { "name": "Create Entry (Device B)", "status": "PASS" },
+    { "name": "Sync Endpoint", "status": "PASS" },
+    { "name": "Reports Endpoint", "status": "PASS" },
+    { "name": "Conflict Resolution (both entries exist)", "status": "PASS" }
+  ]
+}

@@ -56,11 +56,11 @@ export const GST_RATES = [0, 5, 12, 18, 28] as const;
 // Recognition patterns
 export const RECOGNITION_PATTERNS = {
   DATE: [
-    /(\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4})/g,
+    /(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})/g,
     /(\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4})/gi,
     /((Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{2,4})/gi,
   ],
-  PHONE: /(\+?[\d\s\-\(\)]{10,})/g,
+  PHONE: /(\+?[\d\s-()]{10,})/g,
   EMAIL: /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
   AMOUNT: /(₹|Rs\.?|INR)?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/g,
 } as const;

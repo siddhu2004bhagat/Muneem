@@ -10,6 +10,7 @@ import { InsightsDashboard } from '@/features/ai-analytics';
 import { LearningPanel } from '@/features/ai-learning';
 import { OCRTestDashboard } from '@/features/pen-input/ocr';
 import { OCRDebug } from '@/features/pen-input/ocr/OCRDebug';
+import { NotebookProvider, NotebookNav } from '@/features/pen-input';
 
 const PenCanvas = lazy(() => import('@/features/pen-input/PenCanvas'));
 import { Button } from '@/components/ui/button';
@@ -124,10 +125,13 @@ const Index = () => {
         <input ref={restoreInputRef} type="file" accept=".digbahi,application/octet-stream" className="hidden" onChange={handleRestoreFile} />
         {showPenCanvas ? (
           <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading canvas…</div>}>
-            <PenCanvas
-              onRecognized={handlePenRecognized}
-              onClose={() => setShowPenCanvas(false)}
-            />
+            <NotebookProvider>
+              <NotebookNav showCreateButton showDeleteButton />
+              <PenCanvas
+                onRecognized={handlePenRecognized}
+                onClose={() => setShowPenCanvas(false)}
+              />
+            </NotebookProvider>
           </Suspense>
         ) : showEntryForm ? (
           <EntryForm

@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import ShapeSnapOverlay from './components/ShapeSnapOverlay';
 import { detectShape } from './services/shapeSnapper';
 import { usePenTool, PenToolProvider } from './context/PenToolContext';
+import { useNotebook } from './context/NotebookContext';
+import NotebookNav from './components/NotebookNav';
 import type { PenCanvasProps } from './types';
 
 interface RecognitionResult {
@@ -49,6 +51,13 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
   } = useCanvas();
 
   const { mode, tool, color, width, opacity } = usePenTool();
+  
+  // NEW: Notebook context for multi-page support
+  const { 
+    currentPage, 
+    updateCurrentPage, 
+    savePage 
+  } = useNotebook();
   const [pendingShape, setPendingShape] = useState<unknown>(null);
   const [recognitionResults, setRecognitionResults] = useState<RecognitionResult[]>([]);
   const [recognizing, setRecognizing] = useState(false);

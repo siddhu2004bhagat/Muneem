@@ -73,7 +73,7 @@ export function FormatSelector({ currentFormat, onFormatSelect, onClose }: Forma
           <Badge variant={step === 'customize' ? 'default' : 'outline'}>3. Customize</Badge>
         </div>
 
-        <Tabs value={step} onValueChange={(value) => setStep(value as any)}>
+        <Tabs value={step} onValueChange={(value) => setStep(value as 'industry' | 'format' | 'customize')}>
           {/* Step 1: Industry Selection */}
           <TabsContent value="industry" className="space-y-6">
             <Card className="p-6">

@@ -1,5 +1,6 @@
 // Re-export all components from organized structure
 export { default as ErrorBoundary } from './ErrorBoundary';
+export { ConsentModal } from './ConsentModal';
 
 // Layout components
 export { default as Dashboard } from './layout/Dashboard';
