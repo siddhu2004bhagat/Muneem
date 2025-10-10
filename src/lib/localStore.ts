@@ -5,6 +5,20 @@ export interface ShapeRow { id?: number; payload: ArrayBuffer; iv: ArrayBuffer; 
 export interface OcrRow { id?: number; payload: ArrayBuffer; iv: ArrayBuffer; salt: ArrayBuffer; createdAt: number }
 export interface OCRCorrectionRow { id?: number; payload: ArrayBuffer; iv: ArrayBuffer; salt: ArrayBuffer; createdAt: number }
 export interface OCRTelemetryRow { id?: number; payload: ArrayBuffer; iv: ArrayBuffer; salt: ArrayBuffer; createdAt: number }
+export interface ConsentRow { id?: number; payload: ArrayBuffer; iv: ArrayBuffer; salt: ArrayBuffer; createdAt: number }
+
+/**
+ * Consent Record Interface (before encryption)
+ * Stores user consent for telemetry and federated learning
+ */
+export interface ConsentRecord {
+  version: string;
+  timestamp: number;
+  accepted: boolean;
+  scope: Array<'ocr' | 'federated'>;
+  expiresAt?: number;
+  revokedAt?: number;
+}
 
 /**
  * OCR Correction Interface (before encryption)
@@ -98,6 +112,7 @@ class PenDB extends Dexie {
   ocr!: Dexie.Table<OcrRow, number>;
   ocrCorrections!: Dexie.Table<OCRCorrectionRow, number>;
   ocrTelemetry!: Dexie.Table<OCRTelemetryRow, number>;
+  consent!: Dexie.Table<ConsentRow, number>;
   notebookPages!: Dexie.Table<NotebookPageRow, number>;
   notebookSections!: Dexie.Table<NotebookSectionRow, number>;
   
@@ -140,6 +155,18 @@ class PenDB extends Dexie {
       ocr: '++id, createdAt',
       ocrCorrections: '++id, createdAt',
       ocrTelemetry: '++id, createdAt',
+      notebookPages: '++id, pageId, pageNumber, createdAt, updatedAt',
+      notebookSections: '++id, sectionId, createdAt',
+    });
+    
+    // Version 6: Add consent table for privacy-first telemetry gating
+    this.version(6).stores({
+      strokes: '++id, createdAt',
+      shapes: '++id, createdAt',
+      ocr: '++id, createdAt',
+      ocrCorrections: '++id, createdAt',
+      ocrTelemetry: '++id, createdAt',
+      consent: '++id, createdAt',
       notebookPages: '++id, pageId, pageNumber, createdAt, updatedAt',
       notebookSections: '++id, sectionId, createdAt',
     });
@@ -514,5 +541,92 @@ export async function deleteSection(sectionId: string): Promise<void> {
   if (row?.id) {
     await penDB.notebookSections.delete(row.id);
   }
+}
+
+// ============================================================================
+// CONSENT MANAGEMENT (Privacy-First Telemetry Gating)
+// ============================================================================
+
+/**
+ * Save consent record
+ */
+export async function saveConsent(consent: ConsentRecord, pin = '1234'): Promise<number> {
+  const { payload, iv, salt } = await encryptObject(consent, pin);
+  
+  return penDB.consent.add({
+    payload,
+    iv,
+    salt,
+    createdAt: Date.now(),
+  });
+}
+
+/**
+ * Get current consent record (most recent)
+ */
+export async function getConsent(pin = '1234'): Promise<ConsentRecord | null> {
+  const row = await penDB.consent
+    .orderBy('createdAt')
+    .reverse()
+    .first();
+  
+  if (!row) return null;
+  
+  const consent = await decryptObject<ConsentRecord>(row.payload, row.iv, row.salt, pin);
+  
+  // Check if consent is expired
+  if (consent.expiresAt && Date.now() > consent.expiresAt) {
+    return null;
+  }
+  
+  // Check if consent was revoked
+  if (consent.revokedAt) {
+    return null;
+  }
+  
+  return consent;
+}
+
+/**
+ * Check if user has consented to a specific scope
+ */
+export async function hasConsent(scope: 'ocr' | 'federated', pin = '1234'): Promise<boolean> {
+  const consent = await getConsent(pin);
+  
+  if (!consent || !consent.accepted) return false;
+  
+  return consent.scope.includes(scope);
+}
+
+/**
+ * Revoke consent (for privacy settings)
+ */
+export async function revokeConsent(pin = '1234'): Promise<void> {
+  const current = await getConsent(pin);
+  
+  if (current) {
+    const revokedConsent: ConsentRecord = {
+      ...current,
+      accepted: false,
+      revokedAt: Date.now(),
+      scope: [],
+    };
+    
+    await saveConsent(revokedConsent, pin);
+  }
+}
+
+/**
+ * Get consent history (for privacy dashboard)
+ */
+export async function getConsentHistory(pin = '1234'): Promise<ConsentRecord[]> {
+  const rows = await penDB.consent
+    .orderBy('createdAt')
+    .reverse()
+    .toArray();
+  
+  return Promise.all(
+    rows.map(r => decryptObject<ConsentRecord>(r.payload, r.iv, r.salt, pin))
+  );
 }
 

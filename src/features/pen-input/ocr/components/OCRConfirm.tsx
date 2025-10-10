@@ -7,8 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Edit3, Calendar, DollarSign, User, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-import { saveOCRTelemetry } from '@/lib/localStore';
-import { hasConsent, saveConsent, shouldShowConsentModal } from '@/lib/consent';
+import { saveOCRTelemetry, hasConsent, saveConsent, getConsent, type ConsentRecord } from '@/lib/localStore';
 import { ConsentModal } from '@/components/ConsentModal';
 
 interface OCRField {
@@ -150,14 +149,17 @@ export function OCRConfirm({
 
     // Save to IndexedDB
     // Check consent before saving telemetry
-    if (shouldShowConsentModal('ocr_telemetry')) {
-      // First time or policy changed - show consent modal
+    // Check if we need to show consent modal
+    const currentConsent = await getConsent();
+    
+    if (!currentConsent || !currentConsent.accepted) {
+      // First time or no consent - show consent modal
       setPendingTelemetry(telemetry);
       setShowConsentModal(true);
       return;
     }
-
-    if (hasConsent('ocr_telemetry')) {
+    
+    if (await hasConsent('ocr')) {
       // User has already consented - save telemetry
       try {
         await saveOCRTelemetry(telemetry);
@@ -174,11 +176,12 @@ export function OCRConfirm({
     toast.success('OCR result confirmed and saved');
   }, [fields, imageHash, recognizedText, confidence, onConfirm]);
 
-  const handleConsentDecision = useCallback(async (granted: boolean) => {
-    saveConsent('ocr_telemetry', granted);
+  const handleConsentDecision = useCallback(async (consent: ConsentRecord) => {
+    // Save consent record
+    await saveConsent(consent);
     setShowConsentModal(false);
 
-    if (granted && pendingTelemetry) {
+    if (consent.accepted && consent.scope.includes('ocr') && pendingTelemetry) {
       // User granted consent - save the pending telemetry
       try {
         await saveOCRTelemetry(pendingTelemetry);
@@ -211,8 +214,14 @@ export function OCRConfirm({
       {/* Consent Modal */}
       <ConsentModal
         open={showConsentModal}
-        onConsent={handleConsentDecision}
-        consentType="ocr_telemetry"
+        onClose={() => setShowConsentModal(false)}
+        onAccept={handleConsentDecision}
+        onDecline={() => {
+          setShowConsentModal(false);
+          setPendingTelemetry(null);
+          toast.info('OCR telemetry disabled. You can enable it anytime in Settings.');
+        }}
+        context="ocr"
       />
 
       {/* Main OCR Confirm Dialog */}

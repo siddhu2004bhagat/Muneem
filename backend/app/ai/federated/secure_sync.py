@@ -16,27 +16,52 @@ class SecureSync:
         Initialize SecureSync with AES-GCM encryption.
         
         Args:
-            master_key: Master password/key. If None, reads from DIGBAHI_FEDERATED_KEY env var.
+            master_key: Master password/key. If None, reads from FEDERATED_MASTER_SECRET env var.
         
         Raises:
             ValueError: If no master key provided and env var not set.
         """
         if not master_key:
-            master_key = os.getenv('DIGBAHI_FEDERATED_KEY')
+            master_key = os.getenv('FEDERATED_MASTER_SECRET')
             if not master_key:
                 raise ValueError(
-                    "Master key required. Provide via constructor or set DIGBAHI_FEDERATED_KEY environment variable."
+                    "Master key required. Provide via constructor or set FEDERATED_MASTER_SECRET environment variable."
                 )
         
-        # Use a fixed salt for key derivation (stored securely in production)
-        # In production, this should be stored in a secure vault (e.g., HashiCorp Vault, AWS Secrets Manager)
-        self.salt = os.getenv('DIGBAHI_FEDERATED_SALT', 'digbahi_federated_salt_v1_2024').encode()
+        # Option 1: Use pre-derived AES key (recommended for production)
+        # If FEDERATED_AES_KEY is set, use it directly (must be 32 bytes base64)
+        pre_derived_key = os.getenv('FEDERATED_AES_KEY')
+        if pre_derived_key:
+            try:
+                self.key = base64.b64decode(pre_derived_key)
+                if len(self.key) != 32:
+                    raise ValueError("FEDERATED_AES_KEY must be 32 bytes (base64 encoded)")
+                self.aesgcm = AESGCM(self.key)
+                return
+            except Exception as e:
+                raise ValueError(f"Invalid FEDERATED_AES_KEY: {e}")
         
-        # Derive 256-bit key from master key using PBKDF2 with SHA-256
+        # Option 2: Derive key from master secret + salt (fallback)
+        # Salt MUST be provided via environment variable (no hardcoded defaults)
+        salt_hex = os.getenv('FEDERATED_SALT')
+        if not salt_hex:
+            raise ValueError(
+                "FEDERATED_SALT environment variable required. "
+                "Generate with: python -c 'import secrets; print(secrets.token_hex(16))'"
+            )
+        
+        try:
+            salt = bytes.fromhex(salt_hex)
+            if len(salt) < 16:
+                raise ValueError("Salt must be at least 16 bytes")
+        except ValueError as e:
+            raise ValueError(f"Invalid FEDERATED_SALT (must be hex string): {e}")
+        
+        # Derive 256-bit key from master secret using PBKDF2 with SHA-256
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,  # 256 bits for AES-256
-            salt=self.salt,
+            salt=salt,
             iterations=100000,  # OWASP recommended minimum
         )
         self.key = kdf.derive(master_key.encode())
