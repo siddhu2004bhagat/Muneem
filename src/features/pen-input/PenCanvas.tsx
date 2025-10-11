@@ -5,9 +5,20 @@ import { Badge } from '@/components/ui/badge';
 import { Pen, Check, X, RotateCcw, Download, Upload, Zap } from 'lucide-react';
 import useCanvas from './hooks/useCanvas';
 import usePointerEvents from './hooks/usePointerEvents';
-import { recognizeImageData, EnhancedRecognitionService } from './services/recognition.service';
-import { getOCRHybridService, type OCRResult } from './services/ocrHybrid.service';
+import { EnhancedRecognitionService } from './services/recognition.service';
+import type { OCRResult } from './services/ocrHybrid.service';
 import { getCorrectionService } from './services/correction.service';
+
+// Lazy-load OCR service to reduce main bundle
+const loadOCR = async () => {
+  const mod = await import(/* webpackChunkName: "ocr-hybrid" */ './services/ocrHybrid.service');
+  return mod;
+};
+
+const loadRecognition = async () => {
+  const mod = await import(/* webpackChunkName: "ocr-recognition" */ './services/recognition.service');
+  return mod;
+};
 import type { OCRCorrection } from '@/lib/localStore';
 import ToolPalette from './components/ToolPalette';
 import LassoOverlay from './components/LassoOverlay';
@@ -170,6 +181,8 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     try {
       setRecognizing(true);
       const imageData = ctx.getImageData(x, y, width, height);
+      // Lazy-load recognition service
+      const { recognizeImageData } = await loadRecognition();
       const result = await recognizeImageData(imageData);
       
       // Generate image hash for telemetry
@@ -216,6 +229,8 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
 
       // Get full canvas image
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      // Lazy-load recognition service
+      const { recognizeImageData } = await loadRecognition();
       const result = await recognizeImageData(imageData);
       
       const structuredData = EnhancedRecognitionService.extractStructuredData(result.text);
@@ -255,6 +270,8 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     
     try {
       const canvas = canvasRef.current;
+      // Lazy-load OCR service
+      const { getOCRHybridService } = await loadOCR();
       const hybridService = getOCRHybridService();
       const correctionService = getCorrectionService();
       
