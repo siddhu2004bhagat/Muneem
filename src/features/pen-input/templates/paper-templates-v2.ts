@@ -5,9 +5,12 @@
  * Uses devicePixelRatio for crisp rendering.
  */
 
-export { TemplateId, TemplateOptions, defaultTemplateId } from '../types/template.types';
-export type { TemplateId as TemplateIdType, TemplateOptions as TemplateOptionsType } from '../types/template.types';
 import type { TemplateId, TemplateOptions } from '../types/template.types';
+import { defaultTemplateId } from '../types/template.types';
+
+// Re-export types for consumers
+export type { TemplateId, TemplateOptions };
+export { defaultTemplateId };
 
 /**
  * Draw template background on canvas context

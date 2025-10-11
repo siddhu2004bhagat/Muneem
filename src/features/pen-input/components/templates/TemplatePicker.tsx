@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
-import { TemplateId, getTemplateThumbnail } from '../../templates';
+import { TemplateId } from '../../types/template.types';
+import { getTemplateThumbnail } from '../../templates/paper-templates-v2';
 
 interface TemplatePickerProps {
   currentTemplateId: TemplateId;

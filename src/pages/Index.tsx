@@ -10,9 +10,10 @@ import { InsightsDashboard } from '@/features/ai-analytics';
 import { LearningPanel } from '@/features/ai-learning';
 import { OCRTestDashboard } from '@/features/pen-input/ocr';
 import { OCRDebug } from '@/features/pen-input/ocr/OCRDebug';
-import { NotebookProvider, NotebookNav } from '@/features/pen-input';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
-const PenCanvas = lazy(() => import('@/features/pen-input/PenCanvas'));
+// Lazy load entire pen input wrapper to prevent ANY module evaluation on app start
+const PenInputWrapper = lazy(() => import('@/features/pen-input/PenInputWrapper'));
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -124,15 +125,14 @@ const Index = () => {
         {/* hidden file input for restore */}
         <input ref={restoreInputRef} type="file" accept=".digbahi,application/octet-stream" className="hidden" onChange={handleRestoreFile} />
         {showPenCanvas ? (
-          <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading canvas…</div>}>
-            <NotebookProvider>
-              <NotebookNav showCreateButton showDeleteButton />
-              <PenCanvas
+          <ErrorBoundary fallback={<div className="p-6 border rounded-lg bg-card"><p className="text-destructive">⚠️ Pen input failed to load</p><Button onClick={() => setShowPenCanvas(false)} variant="outline">Back to Dashboard</Button></div>}>
+            <Suspense fallback={<div className="p-6 text-center">🕓 Initializing pen input...</div>}>
+              <PenInputWrapper
                 onRecognized={handlePenRecognized}
                 onClose={() => setShowPenCanvas(false)}
               />
-            </NotebookProvider>
-          </Suspense>
+            </Suspense>
+          </ErrorBoundary>
         ) : showEntryForm ? (
           <EntryForm
             onSuccess={handleEntrySuccess}

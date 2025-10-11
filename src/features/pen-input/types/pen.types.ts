@@ -121,3 +121,20 @@ export const SHAPE_THRESHOLDS = {
   RECTANGLE_ASPECT_RATIO_MIN: 0.8,
   RECTANGLE_ASPECT_RATIO_MAX: 1.2
 };
+
+// Additional types for pen input components
+export type DrawingTool = 'pen' | 'pencil' | 'highlighter' | 'eraser' | 'lasso';
+
+export type StrokePoint = {
+  x: number;
+  y: number;
+  pressure: number;
+  timestamp: number;
+};
+
+export type SelectionRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};

@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SelectionRect } from '../pen.types';
+import type { SelectionRect } from '../types/pen.types';
 
 interface Props {
   rect: SelectionRect | null;

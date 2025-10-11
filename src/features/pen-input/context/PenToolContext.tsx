@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from 'react';
-import type { DrawingTool } from '../pen.types';
+import type { DrawingTool } from '../types/pen.types';
 
 interface PenToolState {
   tool: DrawingTool;
