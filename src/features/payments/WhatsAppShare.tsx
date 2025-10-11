@@ -6,14 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { MessageCircle } from 'lucide-react';
-import jsPDF from 'jspdf';
+
+// Lazy-load jsPDF (which includes html2canvas) to reduce main bundle
+const loadJsPDF = async () => {
+  const { default: jsPDF } = await import(/* webpackChunkName: "jspdf" */ 'jspdf');
+  return jsPDF;
+};
 
 export function WhatsAppShare() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [billType, setBillType] = useState('invoice');
   const [amount, setAmount] = useState('');
 
-  const generatePDF = (type: string, amount: string): Blob => {
+  const generatePDF = async (type: string, amount: string): Promise<Blob> => {
+    const jsPDF = await loadJsPDF();
     const doc = new jsPDF();
     
     // Header
@@ -51,8 +57,8 @@ export function WhatsAppShare() {
     }
 
     try {
-      // Generate PDF
-      const pdfBlob = generatePDF(billType, amount);
+      // Generate PDF (now async due to lazy loading)
+      const pdfBlob = await generatePDF(billType, amount);
       const file = new File([pdfBlob], `${billType}_${Date.now()}.pdf`, { type: 'application/pdf' });
 
       // Check if Web Share API is available

@@ -5,8 +5,13 @@ import { db, LedgerEntry } from '@/lib/db';
 import { formatCurrency, formatDate } from '@/lib/gst';
 import { toast } from 'sonner';
 import { FileText, Download } from 'lucide-react';
-import jsPDF from 'jspdf';
 import { saveAs } from 'file-saver';
+
+// Lazy-load jsPDF (which includes html2canvas) to reduce main bundle
+const loadJsPDF = async () => {
+  const { default: jsPDF } = await import(/* webpackChunkName: "jspdf" */ 'jspdf');
+  return jsPDF;
+};
 
 export function Reports() {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
@@ -38,7 +43,8 @@ export function Reports() {
     return { sales, purchases, expenses, receipts, gstCollected, gstPaid };
   };
 
-  const exportPDF = (reportType: 'pl' | 'gst' | 'ledger') => {
+  const exportPDF = async (reportType: 'pl' | 'gst' | 'ledger') => {
+    const jsPDF = await loadJsPDF();
     const doc = new jsPDF();
     const totals = calculateTotals();
     
