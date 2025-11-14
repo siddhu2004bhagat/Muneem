@@ -46,6 +46,70 @@ npm run preview
 
 Visit `http://localhost:8080` in your browser.
 
+## 🔄 Ledger API Mode
+
+DigBahi supports two data modes:
+
+1. **Local Mode (Default):** All data stored locally in browser IndexedDB
+2. **API Mode (Optional):** Sync with backend server for multi-device access
+
+### Enabling API Mode
+
+1. Create a `.env` file in the project root (copy from `.env.example`):
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Set environment variables in `.env`:
+   ```bash
+   VITE_ENABLE_LEDGER_API=true
+   VITE_API_BASE_URL=http://localhost:8000
+   ```
+
+3. Start the backend server (if not already running):
+   ```bash
+   cd backend
+   python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+
+4. Restart the frontend development server:
+   ```bash
+   npm run dev
+   ```
+
+### Features in API Mode
+
+- **Real-time Sync:** WebSocket updates across devices
+- **Server Storage:** Data stored on backend server
+- **Multi-device:** Access from multiple tablets/computers
+- **Automatic Fallback:** Falls back to local mode if API unavailable
+
+### WebSocket Connection
+
+When API mode is enabled, the app connects to:
+```
+ws://localhost:8000/ws
+```
+(URL is automatically derived from `VITE_API_BASE_URL`)
+
+### Fallback Behavior
+
+If API is unreachable or returns errors:
+- Automatic fallback to local Dexie storage
+- Toast notification: "Server unreachable. Switched to local-only mode."
+- All features continue working (filters, pagination, export, print)
+- No data loss or white screens
+- Seamless user experience
+
+### Local Mode (Default)
+
+When `VITE_ENABLE_LEDGER_API=false`:
+- All data stored in browser IndexedDB
+- No network requests
+- Works completely offline
+- Fast and responsive
+- Perfect for single-device usage
+
 ## 📱 Installing as a PWA
 
 ### On Android Tablet/Phone

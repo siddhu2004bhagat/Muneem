@@ -1,0 +1,5 @@
+{
+  "title": "Post-Hardening GST Validation",
+  "prompt": "Run full GST validation: bundle check, schema safety, export verification, and performance test.",
+  "run": "bash scripts/validate-gst.sh"
+}

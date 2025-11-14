@@ -1,27 +1,51 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { db, LedgerEntry } from '@/lib/db';
+import { LedgerEntry } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { calculateGST, GST_RATES, GSTRate } from '@/lib/gst';
 import { toast } from 'sonner';
-import { Calendar, FileText, DollarSign, Percent } from 'lucide-react';
+import { Calendar, FileText, DollarSign, Percent, User, Hash, Tag } from 'lucide-react';
+import { getLedgerDataSource } from '@/services/ledger.datasource';
 
 interface EntryFormProps {
+  entry?: LedgerEntry; // Optional entry for edit mode
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export function EntryForm({ onSuccess, onCancel }: EntryFormProps) {
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [description, setDescription] = useState('');
-  const [amount, setAmount] = useState('');
-  const [type, setType] = useState<LedgerEntry['type']>('sale');
-  const [gstRate, setGstRate] = useState<GSTRate>(18);
+export function EntryForm({ entry, onSuccess, onCancel }: EntryFormProps) {
+  const isEditMode = !!entry;
+  
+  // Initialize form state from entry if in edit mode
+  const [date, setDate] = useState(() => 
+    entry?.date || new Date().toISOString().split('T')[0]
+  );
+  const [description, setDescription] = useState(entry?.description || '');
+  const [partyName, setPartyName] = useState(entry?.party_name || '');
+  const [referenceNo, setReferenceNo] = useState(entry?.reference_no || '');
+  const [tags, setTags] = useState(entry?.tags || '');
+  const [amount, setAmount] = useState(entry?.amount.toString() || '');
+  const [type, setType] = useState<LedgerEntry['type']>(entry?.type || 'sale');
+  const [gstRate, setGstRate] = useState<GSTRate>((entry?.gstRate as GSTRate) || 18);
   const [loading, setLoading] = useState(false);
+
+  // Update form when entry prop changes
+  useEffect(() => {
+    if (entry) {
+      setDate(entry.date);
+      setDescription(entry.description || '');
+      setPartyName(entry.party_name || '');
+      setReferenceNo(entry.reference_no || '');
+      setTags(entry.tags || '');
+      setAmount(entry.amount.toString());
+      setType(entry.type);
+      setGstRate((entry.gstRate as GSTRate) || 18);
+    }
+  }, [entry]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,24 +59,50 @@ export function EntryForm({ onSuccess, onCancel }: EntryFormProps) {
       }
 
       const baseAmount = parseFloat(amount);
+      if (isNaN(baseAmount) || baseAmount <= 0) {
+        toast.error('Please enter a valid amount');
+        return;
+      }
+
       const gstCalc = calculateGST(baseAmount, gstRate);
 
-      const entry: LedgerEntry = {
-        date,
-        description,
-        amount: baseAmount,
-        type,
-        gstRate,
-        gstAmount: gstCalc.gstAmount,
-        userId: user.id,
-        createdAt: new Date()
-      };
+      const datasource = getLedgerDataSource();
 
-      await db.ledger.add(entry);
-      toast.success('Entry added successfully!');
+      if (isEditMode && entry?.id) {
+        // Update existing entry
+        const updateData: Partial<LedgerEntry> = {
+          date,
+          description,
+          amount: baseAmount,
+          type,
+          gstRate,
+          gstAmount: gstCalc.gstAmount,
+          party_name: partyName.trim(),
+          reference_no: referenceNo.trim(),
+          tags: tags.trim(),
+        };
+        await datasource.update(entry.id, updateData);
+        toast.success('Entry updated successfully!');
+      } else {
+        // Create new entry
+        const newEntry: Omit<LedgerEntry, 'id' | 'created_at' | 'updated_at' | 'is_active'> = {
+          date,
+          description,
+          amount: baseAmount,
+          type,
+          gstRate,
+          gstAmount: gstCalc.gstAmount,
+          created_by: user.id,
+          party_name: partyName.trim(),
+          reference_no: referenceNo.trim(),
+          tags: tags.trim(),
+        };
+        await datasource.create(newEntry);
+        toast.success('Entry added successfully!');
+      }
       onSuccess();
-    } catch (error) {
-      toast.error('Failed to add entry');
+    } catch (error: any) {
+      toast.error(error.message || `Failed to ${isEditMode ? 'update' : 'add'} entry`);
     } finally {
       setLoading(false);
     }
@@ -63,7 +113,7 @@ export function EntryForm({ onSuccess, onCancel }: EntryFormProps) {
   return (
     <Card className="p-6 shadow-strong gradient-card animate-scale-in">
       <h2 className="text-2xl font-bold bg-gradient-to-r from-[hsl(145_70%_32%)] to-[hsl(40_98%_48%)] bg-clip-text text-transparent mb-6">
-        Add New Entry
+        {isEditMode ? 'Edit Entry' : 'Add New Entry'}
       </h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -113,6 +163,59 @@ export function EntryForm({ onSuccess, onCancel }: EntryFormProps) {
             required
             className="touch-friendly"
           />
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="party_name" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Party Name
+            </Label>
+            <Input
+              id="party_name"
+              type="text"
+              value={partyName}
+              onChange={(e) => setPartyName(e.target.value)}
+              placeholder="Customer/Vendor name"
+              maxLength={100}
+              className="touch-friendly"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="reference_no" className="flex items-center gap-2">
+              <Hash className="w-4 h-4" />
+              Reference No.
+            </Label>
+            <Input
+              id="reference_no"
+              type="text"
+              value={referenceNo}
+              onChange={(e) => setReferenceNo(e.target.value)}
+              placeholder="Invoice/Receipt number"
+              maxLength={50}
+              className="touch-friendly"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="tags" className="flex items-center gap-2">
+            <Tag className="w-4 h-4" />
+            Tags (comma-separated)
+          </Label>
+          <Input
+            id="tags"
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="e.g., urgent, payment-due, recurring"
+            maxLength={200}
+            className="touch-friendly"
+          />
+          <p className="text-xs text-muted-foreground">
+            Separate multiple tags with commas
+          </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
@@ -177,7 +280,7 @@ export function EntryForm({ onSuccess, onCancel }: EntryFormProps) {
             className="flex-1 gradient-hero touch-friendly hover-glow hover-scale"
             size="lg"
           >
-            {loading ? 'Saving...' : 'Save Entry'}
+            {loading ? 'Saving...' : isEditMode ? 'Update Entry' : 'Save Entry'}
           </Button>
           <Button
             type="button"

@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from datetime import datetime
 from .base import Base
 
@@ -12,10 +13,16 @@ class LedgerEntry(Base):
     gstRate = Column(Float, default=0.0)  # GST rate (e.g., 5.0, 12.0, 18.0)
     gstAmount = Column(Float, default=0.0)  # Calculated GST amount
     created_at = Column(DateTime, default=datetime.utcnow)
+    # NEW FIELDS (Week-1 Ledger Enhancement)
+    party_name = Column(String, index=True, default="")
+    reference_no = Column(String, index=True, default="")
+    tags = Column(String, default="")  # comma-separated for now
+    is_active = Column(Boolean, default=True, nullable=False)  # for soft delete
+    deleted_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(Integer, nullable=True)  # placeholder for auth integration
 
 # Roles and audit (Phase 9)
-from sqlalchemy import ForeignKey
-
 class Role(Base):
     __tablename__ = "roles"
     id = Column(Integer, primary_key=True)
@@ -53,5 +60,68 @@ class Session(Base):
     session_token = Column(String, index=True)
     device_id = Column(String, index=True)
     expires_at = Column(DateTime)
+
+# ========================================
+# INVENTORY MODELS (Week 1 - Backend Foundation)
+# ========================================
+
+class InventoryItem(Base):
+    __tablename__ = "inventory_items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, index=True)
+    name_key = Column(String, nullable=False, index=True)  # normalized for search
+    sku = Column(String, unique=True, index=True)  # unique SKU
+    hsn_code = Column(String)
+    gst_rate = Column(Float, default=0.0)  # 0, 5, 12, 18, 28
+    opening_qty = Column(Float, default=0.0)
+    unit = Column(String, nullable=False)
+    min_qty = Column(Float, default=0.0)
+    mrp = Column(Float)
+    sale_price = Column(Float)
+    purchase_price = Column(Float)
+    is_active = Column(Boolean, default=True, nullable=False)  # for soft delete
+    deleted_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    stock_transactions = relationship("StockTransaction", back_populates="item")
+    
+    def __repr__(self):
+        return f"<InventoryItem id={self.id} name='{self.name}' sku='{self.sku}'>"
+
+
+class StockTransaction(Base):
+    __tablename__ = "stock_transactions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    item_id = Column(Integer, ForeignKey("inventory_items.id"), nullable=False)
+    date = Column(String, nullable=False, index=True)  # YYYY-MM-DD
+    type = Column(String, nullable=False, index=True)  # open|purchase|sale|adjustment
+    qty = Column(Float, nullable=False)
+    ref_ledger_id = Column(Integer, ForeignKey("ledger_entries.id"))
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    item = relationship("InventoryItem", back_populates="stock_transactions")
+    
+    def __repr__(self):
+        return f"<StockTransaction id={self.id} item_id={self.item_id} type='{self.type}' qty={self.qty}>"
+
+
+# ========================================
+# LEDGER IDEMPOTENCY (Week-1 Ledger Enhancement)
+# ========================================
+
+class LedgerIdempotencyKey(Base):
+    __tablename__ = "ledger_idempotency_keys"
+    key = Column(String, primary_key=True, index=True)
+    entry_id = Column(Integer, index=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f"<LedgerIdempotencyKey key='{self.key}' entry_id={self.entry_id}>"
 
 

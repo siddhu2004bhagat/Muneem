@@ -1,71 +1,199 @@
-import { useState, useEffect } from 'react';
-import { db, LedgerEntry } from '@/lib/db';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { formatCurrency } from '@/lib/gst';
-import { TrendingUp, TrendingDown, Wallet, Receipt, DollarSign, ShoppingCart, CreditCard, FileText } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Receipt, DollarSign, ShoppingCart, CreditCard, FileText, Calendar, Filter } from 'lucide-react';
 import { InsightsDashboard } from '@/features/ai-analytics';
+import { getLedgerDataSource } from '@/services/ledger.datasource';
+import { useLedgerSync } from '@/hooks/useLedgerSync';
+import { SummaryCards } from '@/components/dashboard/SummaryCards';
+import { Charts } from '@/components/dashboard/Charts';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import * as ledgerApi from '@/services/ledger.api';
 
 export function Dashboard() {
-  const [stats, setStats] = useState({
-    totalSales: 0,
-    totalPurchases: 0,
-    totalExpenses: 0,
-    totalReceipts: 0,
-    gstCollected: 0,
-    gstPaid: 0
+  const [summary, setSummary] = useState<ledgerApi.AnalyticsSummary>({
+    total_sales: 0,
+    total_purchases: 0,
+    total_expenses: 0,
+    total_receipts: 0,
+    net_profit: 0,
+    cash_flow: 0,
+    gst_collected: 0,
+    gst_paid: 0,
+    net_gst: 0,
+  });
+  const [monthlyData, setMonthlyData] = useState<ledgerApi.MonthlySummary[]>([]);
+  const [partyData, setPartyData] = useState<ledgerApi.PartySummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  
+  // Filters
+  const [filters, setFilters] = useState<{ from?: string; to?: string; type?: string }>({});
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Real-time sync: Listen for ledger events
+  useLedgerSync({
+    onEntryCreated: () => {
+      loadAnalytics();
+    },
+    onEntryUpdated: () => {
+      loadAnalytics();
+    },
+    onEntryDeleted: () => {
+      loadAnalytics();
+    },
   });
 
   useEffect(() => {
-    loadStats();
-  }, []);
-
-  async function loadStats() {
-    const entries = await db.ledger.toArray();
-    
-    const stats = entries.reduce((acc, entry) => {
-      const total = entry.amount + entry.gstAmount;
-      
-      switch (entry.type) {
-        case 'sale':
-          acc.totalSales += total;
-          acc.gstCollected += entry.gstAmount;
-          break;
-        case 'purchase':
-          acc.totalPurchases += total;
-          acc.gstPaid += entry.gstAmount;
-          break;
-        case 'expense':
-          acc.totalExpenses += total;
-          break;
-        case 'receipt':
-          acc.totalReceipts += total;
-          break;
+    loadAnalytics();
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      
-      return acc;
-    }, {
-      totalSales: 0,
-      totalPurchases: 0,
-      totalExpenses: 0,
-      totalReceipts: 0,
-      gstCollected: 0,
-      gstPaid: 0
-    });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.from, filters.to, filters.type, currentYear]);
 
-    setStats(stats);
+  async function loadAnalytics() {
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+
+    setLoading(true);
+    try {
+      const datasource = getLedgerDataSource();
+      
+      // Load summary, monthly, and party data in parallel
+      const [summaryResult, monthlyResult, partyResult] = await Promise.all([
+        datasource.getSummary(filters, signal),
+        datasource.getMonthlySummary(currentYear, filters.type, signal),
+        datasource.getPartySummary(5, filters, signal),
+      ]);
+
+      if (!signal.aborted) {
+        setSummary(summaryResult);
+        setMonthlyData(monthlyResult);
+        setPartyData(partyResult);
+      }
+    } catch (error: unknown) {
+      if (signal.aborted) return;
+      console.error('Failed to load analytics:', error);
+    } finally {
+      if (!signal.aborted) {
+        setLoading(false);
+      }
+    }
   }
 
-  const netProfit = stats.totalSales - stats.totalPurchases - stats.totalExpenses;
-  const netGST = stats.gstCollected - stats.gstPaid;
+  const netProfit = summary.net_profit;
+  const netGST = summary.net_gst;
 
   return (
     <div className="space-y-6">
+      {/* Dashboard Header with Active Filters */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-4">
+        <div>
+          <h1 className="text-2xl font-semibold">Ledger Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Financial analytics and insights
+          </p>
+        </div>
+        {(filters.from || filters.to || filters.type) && (
+          <div className="text-sm text-muted-foreground flex flex-wrap gap-2">
+            {filters.from && filters.to && (
+              <span className="px-2 py-1 bg-muted rounded-md">
+                Period: {filters.from} → {filters.to}
+              </span>
+            )}
+            {filters.type && (
+              <span className="px-2 py-1 bg-muted rounded-md">
+                Type: {filters.type}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Filters */}
+      <Card className="p-4 bg-card">
+        <div className="flex items-center gap-2 mb-4">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <h3 className="text-sm font-semibold">Filters</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="from" className="text-xs flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              From Date
+            </Label>
+            <Input
+              id="from"
+              type="date"
+              value={filters.from || ''}
+              onChange={(e) => setFilters({ ...filters, from: e.target.value || undefined })}
+              className="touch-friendly"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="to" className="text-xs flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              To Date
+            </Label>
+            <Input
+              id="to"
+              type="date"
+              value={filters.to || ''}
+              onChange={(e) => setFilters({ ...filters, to: e.target.value || undefined })}
+              className="touch-friendly"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="type" className="text-xs">Type</Label>
+            <Select
+              value={filters.type || 'all'}
+              onValueChange={(value) => setFilters({ ...filters, type: value === 'all' ? undefined : value })}
+            >
+              <SelectTrigger className="touch-friendly">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="sale">Sale</SelectItem>
+                <SelectItem value="purchase">Purchase</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="receipt">Receipt</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="year" className="text-xs">Year</Label>
+            <Input
+              id="year"
+              type="number"
+              value={currentYear}
+              onChange={(e) => setCurrentYear(parseInt(e.target.value) || new Date().getFullYear())}
+              min={2000}
+              max={2100}
+              className="touch-friendly"
+            />
+          </div>
+        </div>
+      </Card>
+
+      {/* Summary Cards (Phase D) */}
+      <SummaryCards summary={summary} loading={loading} />
+
       {/* Business Overview Banner */}
       <Card className="p-8 gradient-hero shadow-strong animate-scale-in">
         <div className="grid md:grid-cols-3 gap-8">
           <div className="text-center md:text-left">
             <p className="text-white/80 text-sm uppercase tracking-wider mb-2">Total Revenue</p>
-            <p className="text-4xl font-bold text-white mb-1">{formatCurrency(stats.totalSales + stats.totalReceipts)}</p>
+            <p className="text-4xl font-bold text-white mb-1">{formatCurrency(summary.total_sales + summary.total_receipts)}</p>
             <p className="text-white/70 text-xs">Sales + Receipts</p>
           </div>
           <div className="text-center">
@@ -86,60 +214,8 @@ export function Dashboard() {
         </div>
       </Card>
 
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800 shadow-sm hover-lift animate-scale-in group">
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 rounded-lg bg-green-500 shadow-md group-hover:shadow-lg transition-shadow">
-              <DollarSign className="w-5 h-5 text-white" />
-            </div>
-            <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
-          </div>
-          <p className="text-xs font-medium text-green-700 dark:text-green-400 uppercase tracking-wide mb-1">Sales</p>
-          <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-            {formatCurrency(stats.totalSales)}
-          </p>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border-blue-200 dark:border-blue-800 shadow-sm hover-lift animate-scale-in group" style={{ animationDelay: '0.05s' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 rounded-lg bg-blue-500 shadow-md group-hover:shadow-lg transition-shadow">
-              <ShoppingCart className="w-5 h-5 text-white" />
-            </div>
-            <TrendingDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          </div>
-          <p className="text-xs font-medium text-blue-700 dark:text-blue-400 uppercase tracking-wide mb-1">Purchases</p>
-          <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-            {formatCurrency(stats.totalPurchases)}
-          </p>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-red-50 to-orange-50 dark:from-red-950/20 dark:to-orange-950/20 border-red-200 dark:border-red-800 shadow-sm hover-lift animate-scale-in group" style={{ animationDelay: '0.1s' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 rounded-lg bg-red-500 shadow-md group-hover:shadow-lg transition-shadow">
-              <Wallet className="w-5 h-5 text-white" />
-            </div>
-            <TrendingDown className="w-4 h-4 text-red-600 dark:text-red-400" />
-          </div>
-          <p className="text-xs font-medium text-red-700 dark:text-red-400 uppercase tracking-wide mb-1">Expenses</p>
-          <p className="text-2xl font-bold text-red-900 dark:text-red-100">
-            {formatCurrency(stats.totalExpenses)}
-          </p>
-        </Card>
-
-        <Card className="p-5 bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-amber-950/20 dark:to-yellow-950/20 border-amber-200 dark:border-amber-800 shadow-sm hover-lift animate-scale-in group" style={{ animationDelay: '0.15s' }}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="p-2.5 rounded-lg bg-amber-500 shadow-md group-hover:shadow-lg transition-shadow">
-              <CreditCard className="w-5 h-5 text-white" />
-            </div>
-            <TrendingUp className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          </div>
-          <p className="text-xs font-medium text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-1">Receipts</p>
-          <p className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-            {formatCurrency(stats.totalReceipts)}
-          </p>
-        </Card>
-      </div>
+      {/* Charts (Phase D) */}
+      <Charts monthlyData={monthlyData} partyData={partyData} loading={loading} currentYear={currentYear} />
 
       {/* Financial Summary Cards */}
       <div className="grid md:grid-cols-2 gap-6">
@@ -156,21 +232,21 @@ export function Dashboard() {
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 Revenue
               </span>
-              <span className="font-bold text-green-700 dark:text-green-400">{formatCurrency(stats.totalSales)}</span>
+              <span className="font-bold text-green-700 dark:text-green-400">{formatCurrency(summary.total_sales)}</span>
             </div>
             <div className="flex justify-between items-center p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30 transition-all">
               <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                 Cost of Goods
               </span>
-              <span className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(stats.totalPurchases)}</span>
+              <span className="font-bold text-blue-700 dark:text-blue-400">{formatCurrency(summary.total_purchases)}</span>
             </div>
             <div className="flex justify-between items-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30 transition-all">
               <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                 Expenses
               </span>
-              <span className="font-bold text-red-700 dark:text-red-400">{formatCurrency(stats.totalExpenses)}</span>
+              <span className="font-bold text-red-700 dark:text-red-400">{formatCurrency(summary.total_expenses)}</span>
             </div>
             <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 mt-4 shadow-md">
               <span className="font-bold text-white text-base">Net Profit</span>
@@ -194,14 +270,14 @@ export function Dashboard() {
                 <div className="w-2 h-2 rounded-full bg-green-500"></div>
                 GST Collected
               </span>
-              <span className="font-bold text-green-700 dark:text-green-400">{formatCurrency(stats.gstCollected)}</span>
+              <span className="font-bold text-green-700 dark:text-green-400">{formatCurrency(summary.gst_collected)}</span>
             </div>
             <div className="flex justify-between items-center p-3 rounded-lg bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30 transition-all">
               <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-red-500"></div>
                 GST Paid
               </span>
-              <span className="font-bold text-red-700 dark:text-red-400">{formatCurrency(stats.gstPaid)}</span>
+              <span className="font-bold text-red-700 dark:text-red-400">{formatCurrency(summary.gst_paid)}</span>
             </div>
             <div className="flex justify-between items-center p-4 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 mt-4 shadow-md">
               <span className="font-bold text-white text-base">Net GST Liability</span>

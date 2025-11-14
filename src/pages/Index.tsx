@@ -1,25 +1,51 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import React from 'react';
 import { Dashboard } from '@/components/layout/Dashboard';
 import { LedgerTable } from '@/components/layout/LedgerTable';
 import { EntryForm } from '@/components/forms/EntryForm';
-import { Reports } from '@/features/reports/Reports';
-import { UPIIntegration } from '@/features/payments/UPIIntegration';
-import { CreditManager } from '@/features/payments/CreditManager';
-import { WhatsAppShare } from '@/features/payments/WhatsAppShare';
 import { InsightsDashboard } from '@/features/ai-analytics';
 import { LearningPanel } from '@/features/ai-learning';
-import { OCRTestDashboard } from '@/features/pen-input/ocr';
-import { OCRDebug } from '@/features/pen-input/ocr/OCRDebug';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy load entire pen input wrapper to prevent ANY module evaluation on app start
 const PenInputWrapper = lazy(() => import('@/features/pen-input/PenInputWrapper'));
+
+// Lazy load PDF-heavy components to reduce main bundle size
+// These components contain jsPDF and html2canvas dependencies
+const Reports = lazy(() => 
+  import('@/features/reports/Reports').then(m => ({ default: m.Reports }))
+);
+const UPIIntegration = lazy(() => 
+  import('@/features/payments/UPIIntegration').then(m => ({ default: m.UPIIntegration }))
+);
+const CreditManager = lazy(() => 
+  import('@/features/payments/CreditManager').then(m => ({ default: m.CreditManager }))
+);
+const WhatsAppShare = lazy(() => 
+  import('@/features/payments/WhatsAppShare').then(m => ({ default: m.WhatsAppShare }))
+);
+
+// Feature flags - define BEFORE lazy imports
+const ENABLE_AI_FEATURES = false;
+const ENABLE_DEV_TOOLS = import.meta.env.DEV;
+const ENABLE_UPI = import.meta.env.VITE_ENABLE_UPI !== 'false';
+const ENABLE_GST_REPORTS = import.meta.env.VITE_ENABLE_GST_REPORTS === 'true';
+const ENABLE_INVENTORY = import.meta.env.VITE_ENABLE_INVENTORY === 'true';
+
+// Lazy load GST Reports component - always available but conditionally rendered
+const GSTReports = lazy(() => import('@/features/reports/gst/GSTReports'));
+
+// Lazy load Inventory component - conditionally rendered
+const InventoryPage = ENABLE_INVENTORY
+  ? lazy(() => import('@/features/inventory/InventoryPage').then(m => ({ default: m.InventoryPage })))
+  : null;
+
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { initializeDB } from '@/lib/db';
+import { initializeDB, LedgerEntry } from '@/lib/db';
 import { toast } from 'sonner';
-import { LayoutDashboard, BookOpen, PenTool, FileText, CreditCard, MessageCircle, Book, Brain, Sparkles, TestTube, Bug } from 'lucide-react';
+import { LayoutDashboard, BookOpen, PenTool, FileText, CreditCard, MessageCircle, Book, Brain, Sparkles, Package } from 'lucide-react';
 import { SimpleFormatPicker } from '@/features/ledger-formats';
 import { LedgerFormatId } from '@/features/ledger-formats';
 import { useTranslation } from 'react-i18next';
@@ -33,6 +59,7 @@ const Index = () => {
   const { i18n } = useTranslation();
   const online = useOnline();
   const [showEntryForm, setShowEntryForm] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<LedgerEntry | undefined>(undefined);
   const [showPenCanvas, setShowPenCanvas] = useState(false);
   const [refreshLedger, setRefreshLedger] = useState(0);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -51,7 +78,14 @@ const Index = () => {
 
   const handleEntrySuccess = () => {
     setShowEntryForm(false);
+    setEditingEntry(undefined);
     setRefreshLedger(prev => prev + 1);
+    setActiveTab('ledger');
+  };
+
+  const handleEditEntry = (entry: LedgerEntry) => {
+    setEditingEntry(entry);
+    setShowEntryForm(true);
     setActiveTab('ledger');
   };
 
@@ -135,12 +169,16 @@ const Index = () => {
           </ErrorBoundary>
         ) : showEntryForm ? (
           <EntryForm
+            entry={editingEntry}
             onSuccess={handleEntrySuccess}
-            onCancel={() => setShowEntryForm(false)}
+            onCancel={() => {
+              setShowEntryForm(false);
+              setEditingEntry(undefined);
+            }}
           />
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-            <TabsList className="grid w-full max-w-6xl mx-auto grid-cols-11 mb-8 p-1.5 bg-card shadow-medium">
+            <TabsList className={`grid w-full max-w-6xl mx-auto ${ENABLE_INVENTORY ? 'grid-cols-12' : 'grid-cols-11'} mb-8 p-1.5 bg-card shadow-medium`}>
               <TabsTrigger value="dashboard" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
                 <LayoutDashboard className="w-4 h-4 mr-2" />
                 Dashboard
@@ -157,26 +195,36 @@ const Index = () => {
                 <FileText className="w-4 h-4 mr-2" />
                 Reports
               </TabsTrigger>
-              <TabsTrigger value="ai-insights" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <Brain className="w-4 h-4 mr-2" />
-                AI Insights
-              </TabsTrigger>
-              <TabsTrigger value="ai-learning" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <Sparkles className="w-4 h-4 mr-2" />
-                AI Learning
-              </TabsTrigger>
-              <TabsTrigger value="ocr-test" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <TestTube className="w-4 h-4 mr-2" />
-                OCR Test
-              </TabsTrigger>
-              <TabsTrigger value="ocr-debug" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <Bug className="w-4 h-4 mr-2" />
-                OCR Debug
-              </TabsTrigger>
-              <TabsTrigger value="upi" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <CreditCard className="w-4 h-4 mr-2" />
-                UPI
-              </TabsTrigger>
+              {ENABLE_AI_FEATURES && (
+                <>
+                  <TabsTrigger value="ai-insights" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
+                    <Brain className="w-4 h-4 mr-2" />
+                    AI Insights
+                  </TabsTrigger>
+                  <TabsTrigger value="ai-learning" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    AI Learning
+                  </TabsTrigger>
+                </>
+              )}
+              {ENABLE_UPI && (
+                <TabsTrigger value="upi" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  UPI
+                </TabsTrigger>
+              )}
+              {ENABLE_GST_REPORTS && (
+                <TabsTrigger value="gst-reports" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
+                  <FileText className="w-4 h-4 mr-2" />
+                  GST Reports
+                </TabsTrigger>
+              )}
+              {ENABLE_INVENTORY && (
+                <TabsTrigger value="inventory" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
+                  <Package className="w-4 h-4 mr-2" />
+                  Inventory
+                </TabsTrigger>
+              )}
               <TabsTrigger value="credit" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
                 <CreditCard className="w-4 h-4 mr-2" />
                 Credit
@@ -203,41 +251,67 @@ const Index = () => {
 
             <TabsContent value="ledger">
               <LedgerTable
-                onAddEntry={() => setShowEntryForm(true)}
+                onAddEntry={() => {
+                  setEditingEntry(undefined);
+                  setShowEntryForm(true);
+                }}
+                onEditEntry={handleEditEntry}
                 refresh={refreshLedger}
               />
             </TabsContent>
 
             <TabsContent value="reports">
-              <Reports />
+              <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Reports...</div>}>
+                <Reports />
+              </Suspense>
             </TabsContent>
 
-            <TabsContent value="ai-insights">
-              <InsightsDashboard />
-            </TabsContent>
+            {ENABLE_AI_FEATURES && (
+              <>
+                <TabsContent value="ai-insights">
+                  <InsightsDashboard />
+                </TabsContent>
 
-            <TabsContent value="ai-learning">
-              <LearningPanel />
-            </TabsContent>
+                <TabsContent value="ai-learning">
+                  <LearningPanel />
+                </TabsContent>
+              </>
+            )}
 
-            <TabsContent value="ocr-test">
-              <OCRTestDashboard />
-            </TabsContent>
+            {ENABLE_UPI && (
+              <TabsContent value="upi">
+                <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading UPI Integration...</div>}>
+                  <UPIIntegration />
+                </Suspense>
+              </TabsContent>
+            )}
 
-            <TabsContent value="ocr-debug">
-              <OCRDebug />
-            </TabsContent>
+            {ENABLE_GST_REPORTS && (
+              <TabsContent value="gst-reports">
+                <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading GST Reports...</div>}>
+                  <GSTReports />
+                </Suspense>
+              </TabsContent>
+            )}
 
-            <TabsContent value="upi">
-              <UPIIntegration />
-            </TabsContent>
+            {ENABLE_INVENTORY && InventoryPage && (
+              <TabsContent value="inventory">
+                <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Inventory...</div>}>
+                  <InventoryPage />
+                </Suspense>
+              </TabsContent>
+            )}
 
             <TabsContent value="credit">
-              <CreditManager />
+              <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Credit Manager...</div>}>
+                <CreditManager />
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="whatsapp">
-              <WhatsAppShare />
+              <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading WhatsApp Share...</div>}>
+                <WhatsAppShare />
+              </Suspense>
             </TabsContent>
           </Tabs>
         )}

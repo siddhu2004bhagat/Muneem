@@ -16,13 +16,26 @@ router = APIRouter(prefix="/api/v1/ai/federated")
 # Global instances
 trainer = LocalTrainer()
 aggregator = FederatedAggregator()
-secure_sync = SecureSync()
+# Lazy initialization - only create when needed
+_secure_sync = None
+
+def get_secure_sync():
+    """Lazy initialization of SecureSync with default dev key if env var not set"""
+    global _secure_sync
+    if _secure_sync is None:
+        import os
+        if not os.getenv('FEDERATED_MASTER_SECRET'):
+            # Use a default dev key for local development
+            os.environ['FEDERATED_MASTER_SECRET'] = 'dev-master-key-change-in-production-32chars!!'
+        _secure_sync = SecureSync()
+    return _secure_sync
 
 @router.post("/upload", response_model=UploadResponse)
 def upload_model_update(request: ModelUpdateRequest, db: Session = Depends(get_db)):
     """Upload encrypted model update from client"""
     try:
         # Decrypt the model update
+        secure_sync = get_secure_sync()
         decrypted_data = secure_sync.decrypt_model_update(request.encrypted_data)
         
         # Verify integrity
@@ -46,6 +59,7 @@ def aggregate_model_updates(request: AggregateRequest, db: Session = Depends(get
     """Aggregate multiple model updates using FedAvg"""
     try:
         # Decrypt all client updates
+        secure_sync = get_secure_sync()
         decrypted_updates = []
         for update in request.client_updates:
             decrypted_data = secure_sync.decrypt_model_update(update.encrypted_data)

@@ -29,3 +29,4 @@ export default function PenInputWrapper({ onRecognized, onClose }: PenInputWrapp
   );
 }
 
+

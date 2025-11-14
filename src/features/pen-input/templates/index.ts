@@ -11,10 +11,10 @@ export {
   getTemplateThumbnail,
   getTemplateName,
   getTemplateDescription,
+  type TemplateId,
+  type TemplateOptions,
   defaultTemplateId,
 } from './paper-templates-v2';
-
-export type { TemplateId, TemplateOptions } from './paper-templates-v2';
 
 // Legacy adapter (for backward compatibility)
 export {
