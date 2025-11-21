@@ -7,7 +7,7 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 5173,
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
@@ -16,4 +16,10 @@ export default defineConfig(({ mode }) => ({
     },
   },
   assetsInclude: ["**/*.md"],
+  // Environment variables (can be overridden by .env file)
+  define: {
+    'import.meta.env.VITE_PADDLE_OCR_URL': JSON.stringify(
+      process.env.VITE_PADDLE_OCR_URL || 'http://localhost:9000/recognize'
+    ),
+  },
 }));

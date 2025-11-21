@@ -18,11 +18,11 @@ const Reports = lazy(() =>
 const UPIIntegration = lazy(() => 
   import('@/features/payments/UPIIntegration').then(m => ({ default: m.UPIIntegration }))
 );
-const CreditManager = lazy(() => 
-  import('@/features/payments/CreditManager').then(m => ({ default: m.CreditManager }))
-);
 const WhatsAppShare = lazy(() => 
   import('@/features/payments/WhatsAppShare').then(m => ({ default: m.WhatsAppShare }))
+);
+const Settings = lazy(() => 
+  import('@/features/settings/Settings').then(m => ({ default: m.Settings }))
 );
 
 // Feature flags - define BEFORE lazy imports
@@ -45,7 +45,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { initializeDB, LedgerEntry } from '@/lib/db';
 import { toast } from 'sonner';
-import { LayoutDashboard, BookOpen, PenTool, FileText, CreditCard, MessageCircle, Book, Brain, Sparkles, Package } from 'lucide-react';
+import { LayoutDashboard, BookOpen, PenTool, FileText, CreditCard, MessageCircle, Book, Brain, Sparkles, Package, Settings as SettingsIcon } from 'lucide-react';
 import { SimpleFormatPicker } from '@/features/ledger-formats';
 import { LedgerFormatId } from '@/features/ledger-formats';
 import { useTranslation } from 'react-i18next';
@@ -155,16 +155,16 @@ const Index = () => {
       <Header onOpenPen={() => setShowPenCanvas(true)} />
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-6">
         {/* hidden file input for restore */}
         <input ref={restoreInputRef} type="file" accept=".digbahi,application/octet-stream" className="hidden" onChange={handleRestoreFile} />
         {showPenCanvas ? (
           <ErrorBoundary fallback={<div className="p-6 border rounded-lg bg-card"><p className="text-destructive">⚠️ Pen input failed to load</p><Button onClick={() => setShowPenCanvas(false)} variant="outline">Back to Dashboard</Button></div>}>
             <Suspense fallback={<div className="p-6 text-center">🕓 Initializing pen input...</div>}>
               <PenInputWrapper
-                onRecognized={handlePenRecognized}
-                onClose={() => setShowPenCanvas(false)}
-              />
+            onRecognized={handlePenRecognized}
+            onClose={() => setShowPenCanvas(false)}
+          />
             </Suspense>
           </ErrorBoundary>
         ) : showEntryForm ? (
@@ -178,62 +178,65 @@ const Index = () => {
           />
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-            <TabsList className={`grid w-full max-w-6xl mx-auto ${ENABLE_INVENTORY ? 'grid-cols-12' : 'grid-cols-11'} mb-8 p-1.5 bg-card shadow-medium`}>
-              <TabsTrigger value="dashboard" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <LayoutDashboard className="w-4 h-4 mr-2" />
-                Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="formats" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <Book className="w-4 h-4 mr-2" />
-                Formats
-              </TabsTrigger>
-              <TabsTrigger value="ledger" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Ledger
-              </TabsTrigger>
-              <TabsTrigger value="reports" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <FileText className="w-4 h-4 mr-2" />
-                Reports
-              </TabsTrigger>
-              {ENABLE_AI_FEATURES && (
-                <>
-                  <TabsTrigger value="ai-insights" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                    <Brain className="w-4 h-4 mr-2" />
-                    AI Insights
-                  </TabsTrigger>
-                  <TabsTrigger value="ai-learning" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    AI Learning
-                  </TabsTrigger>
-                </>
-              )}
-              {ENABLE_UPI && (
-                <TabsTrigger value="upi" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
+            {/* Navigation tabs - uniformly centered */}
+            <div className="flex justify-center mb-6">
+              <TabsList className="inline-flex items-center gap-1 p-1.5 bg-card shadow-medium rounded-lg">
+                <TabsTrigger value="dashboard" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                  <LayoutDashboard className="w-4 h-4 mr-2" />
+                  Dashboard
+                </TabsTrigger>
+                <TabsTrigger value="formats" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                  <Book className="w-4 h-4 mr-2" />
+                  Formats
+                </TabsTrigger>
+                <TabsTrigger value="ledger" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Ledger
+                </TabsTrigger>
+                <TabsTrigger value="reports" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Reports
+                </TabsTrigger>
+                {ENABLE_AI_FEATURES && (
+                  <>
+                    <TabsTrigger value="ai-insights" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                      <Brain className="w-4 h-4 mr-2" />
+                      AI Insights
+                    </TabsTrigger>
+                    <TabsTrigger value="ai-learning" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      AI Learning
+                    </TabsTrigger>
+                  </>
+                )}
+                {ENABLE_UPI && (
+                <TabsTrigger value="upi" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
                   <CreditCard className="w-4 h-4 mr-2" />
                   UPI
                 </TabsTrigger>
-              )}
-              {ENABLE_GST_REPORTS && (
-                <TabsTrigger value="gst-reports" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                  <FileText className="w-4 h-4 mr-2" />
-                  GST Reports
+                )}
+                {ENABLE_GST_REPORTS && (
+                  <TabsTrigger value="gst-reports" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                    <FileText className="w-4 h-4 mr-2" />
+                    GST Reports
+                  </TabsTrigger>
+                )}
+                {ENABLE_INVENTORY && (
+                  <TabsTrigger value="inventory" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                    <Package className="w-4 h-4 mr-2" />
+                    Inventory
+                  </TabsTrigger>
+                )}
+                <TabsTrigger value="whatsapp" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  WhatsApp
                 </TabsTrigger>
-              )}
-              {ENABLE_INVENTORY && (
-                <TabsTrigger value="inventory" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                  <Package className="w-4 h-4 mr-2" />
-                  Inventory
+                <TabsTrigger value="settings" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                  <SettingsIcon className="w-4 h-4 mr-2" />
+                  Settings
                 </TabsTrigger>
-              )}
-              <TabsTrigger value="credit" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <CreditCard className="w-4 h-4 mr-2" />
-                Credit
-              </TabsTrigger>
-              <TabsTrigger value="whatsapp" className="touch-friendly data-[state=active]:gradient-hero data-[state=active]:text-white transition-smooth">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                WhatsApp
-              </TabsTrigger>
-            </TabsList>
+              </TabsList>
+            </div>
 
             <TabsContent value="dashboard">
               <Dashboard />
@@ -255,6 +258,15 @@ const Index = () => {
                   setEditingEntry(undefined);
                   setShowEntryForm(true);
                 }}
+                onQuickPenEntry={() => {
+                  setEditingEntry(undefined);
+                  setShowEntryForm(true);
+                  // Trigger pen input modal after form opens
+                  setTimeout(() => {
+                    const event = new CustomEvent('digbahi:open-pen-input');
+                    window.dispatchEvent(event);
+                  }, 100);
+                }}
                 onEditEntry={handleEditEntry}
                 refresh={refreshLedger}
               />
@@ -262,7 +274,7 @@ const Index = () => {
 
             <TabsContent value="reports">
               <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Reports...</div>}>
-                <Reports />
+              <Reports />
               </Suspense>
             </TabsContent>
 
@@ -279,9 +291,9 @@ const Index = () => {
             )}
 
             {ENABLE_UPI && (
-              <TabsContent value="upi">
+            <TabsContent value="upi">
                 <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading UPI Integration...</div>}>
-                  <UPIIntegration />
+              <UPIIntegration />
                 </Suspense>
               </TabsContent>
             )}
@@ -299,18 +311,18 @@ const Index = () => {
                 <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Inventory...</div>}>
                   <InventoryPage />
                 </Suspense>
-              </TabsContent>
-            )}
-
-            <TabsContent value="credit">
-              <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Credit Manager...</div>}>
-                <CreditManager />
-              </Suspense>
             </TabsContent>
+            )}
 
             <TabsContent value="whatsapp">
               <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading WhatsApp Share...</div>}>
-                <WhatsAppShare />
+              <WhatsAppShare />
+              </Suspense>
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Settings...</div>}>
+                <Settings />
               </Suspense>
             </TabsContent>
           </Tabs>

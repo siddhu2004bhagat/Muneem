@@ -205,6 +205,8 @@ export default class OCRHybridService {
     reject: (error: Error) => void;
   }>();
 
+  private paddleEndpoint = import.meta.env.VITE_PADDLE_OCR_URL as string | undefined;
+
   /**
    * Lazy load worker
    */
@@ -264,13 +266,13 @@ export default class OCRHybridService {
 
       worker.postMessage({ type, payload, id });
 
-      // Timeout after 30 seconds
+      // Timeout after 10 seconds (reduced from 30s for faster feedback)
       setTimeout(() => {
         if (this.pendingRequests.has(id)) {
           this.pendingRequests.delete(id);
           reject(new Error('OCR request timeout'));
         }
-      }, 30000);
+      }, 10000);
     });
   }
 
@@ -345,6 +347,56 @@ export default class OCRHybridService {
     }
 
     return this.recognizeCanvas(canvasEl, options);
+  }
+
+  /**
+   * Recognize text using external PaddleOCR service
+   */
+  async recognizeWithPaddle(canvasEl: HTMLCanvasElement): Promise<OCRResult[]> {
+    if (!this.paddleEndpoint) {
+      console.warn('[OCRHybridService] Paddle OCR endpoint not configured');
+      return [];
+    }
+
+    const dataUrl = canvasEl.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1];
+
+    try {
+      const response = await fetch(this.paddleEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: base64 })
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`PaddleOCR error: ${response.status} ${text}`);
+      }
+
+      const { text, confidence } = await response.json() as { text: string; confidence: number };
+
+      if (!text) {
+        return [];
+      }
+
+      const fallbackResult: OCRResult = {
+        id: `paddle_${Date.now()}`,
+        text,
+        confidence: typeof confidence === 'number' ? confidence : 0.7,
+        box: { x: 0, y: 0, width: canvasEl.width, height: canvasEl.height },
+        type: 'merged'
+      };
+
+      console.log('[OCRHybridService] PaddleOCR result:', fallbackResult);
+      return [fallbackResult];
+    } catch (error) {
+      console.error('[OCRHybridService] PaddleOCR request failed:', error);
+      throw error instanceof Error ? error : new Error('PaddleOCR request failed');
+    }
+  }
+
+  hasPaddleFallback(): boolean {
+    return Boolean(this.paddleEndpoint);
   }
 
   /**

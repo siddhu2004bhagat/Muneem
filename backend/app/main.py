@@ -11,15 +11,24 @@ from .api.v1.reports import router as reports_router
 from .api.v1.upi import router as upi_router
 from .api.v1.upi_sync import router as upi_sync_router
 from .api.v1.inventory import router as inventory_router  # NEW: Inventory API
+from .api.v1.whatsapp import router as whatsapp_router
 from .ai.analytics.routes import router as analytics_router
-from .ai.federated.routes import router as federated_router
+
+# Optional: Federated learning (requires numpy)
+try:
+    from .ai.federated.routes import router as federated_router
+    FEDERATED_AVAILABLE = True
+except ImportError as e:
+    print(f"⚠️  Federated learning module not available: {e}")
+    federated_router = None
+    FEDERATED_AVAILABLE = False
 
 app = FastAPI(title="DigBahi Local API")
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080", "http://192.168.29.253:3000"],
+    allow_origins=["http://localhost:3000", "http://localhost:8080", "http://localhost:5173", "http://192.168.29.253:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,7 +44,9 @@ app.include_router(reports_router)
 app.include_router(upi_router)
 app.include_router(upi_sync_router, prefix="/api/v1/upi")
 app.include_router(inventory_router)  # NEW: Register inventory router
+app.include_router(whatsapp_router)  # WhatsApp Business API
 app.include_router(analytics_router)
-app.include_router(federated_router)
+if FEDERATED_AVAILABLE and federated_router:
+    app.include_router(federated_router)
 
 

@@ -15,6 +15,5 @@ export { default as PenCanvas } from '../features/pen-input/PenCanvas';
 
 // Feature components
 export { default as Reports } from '../features/reports/Reports';
-export { default as CreditManager } from '../features/payments/CreditManager';
 export { default as UPIIntegration } from '../features/payments/UPIIntegration';
 export { default as WhatsAppShare } from '../features/payments/WhatsAppShare';

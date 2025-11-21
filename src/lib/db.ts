@@ -44,6 +44,43 @@ export interface GSTRecord {
   createdAt: Date;
 }
 
+export interface CompanySettings {
+  id?: number;
+  businessName: string;
+  address?: string;
+  gstin?: string;
+  phone?: string;
+  email?: string;
+  updated_at: string;
+}
+
+export interface CustomerContact {
+  id?: number;
+  name: string;
+  phone: string;
+  address?: string;
+  gstin?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreditEntry {
+  id?: number;
+  invoiceNumber: string;
+  ledgerEntryId?: number;
+  customerName: string;
+  customerPhone: string;
+  amount: number;
+  gstRate: number;
+  gstAmount: number;
+  status: 'pending' | 'paid';
+  otpVerified: boolean;
+  otpVerifiedAt?: string;
+  paidAt?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export class DigBahiDB extends Dexie {
   users!: Table<User>;
   ledger!: Table<LedgerEntry>;
@@ -52,6 +89,9 @@ export class DigBahiDB extends Dexie {
   syncQueue!: Table<UPIReconcileRequest>;
   items!: Table<any>;
   stockTxns!: Table<any>;
+  companySettings!: Table<CompanySettings>;
+  customerContacts!: Table<CustomerContact>;
+  creditEntries!: Table<CreditEntry>;
 
   constructor() {
     super('digbahi');
@@ -95,6 +135,37 @@ export class DigBahiDB extends Dexie {
       console.log('✅ Added individual indexes for faster queries');
       console.log('✅ Added search-optimized indexes');
       console.log('✅ Added stock transaction indexes');
+    });
+    
+    // Version 6: Add company settings and customer contacts
+    this.version(6).stores({
+      users: '++id, username, role',
+      ledger: '++id, date, type, userId, createdAt',
+      gstRecords: '++id, ledgerId, status, createdAt',
+      upiIntents: 'id, upiId, status, createdAt',
+      syncQueue: 'id, txnRef, timestamp',
+      items: '++id,nameKey,sku,gstRate,unit,createdAt',
+      stockTxns: '++id,itemId,date,refLedgerId,type',
+      companySettings: '++id',
+      customerContacts: '++id, phone, name'
+    }).upgrade(async (tx) => {
+      console.log('🚀 Adding company settings and customer contacts...');
+    });
+    
+    // Version 7: Add credit entries
+    this.version(7).stores({
+      users: '++id, username, role',
+      ledger: '++id, date, type, userId, createdAt',
+      gstRecords: '++id, ledgerId, status, createdAt',
+      upiIntents: 'id, upiId, status, createdAt',
+      syncQueue: 'id, txnRef, timestamp',
+      items: '++id,nameKey,sku,gstRate,unit,createdAt',
+      stockTxns: '++id,itemId,date,refLedgerId,type',
+      companySettings: '++id',
+      customerContacts: '++id, phone, name',
+      creditEntries: '++id, invoiceNumber, customerPhone, status'
+    }).upgrade(async (tx) => {
+      console.log('🚀 Adding credit entries table...');
     });
   }
 }
@@ -152,4 +223,95 @@ export async function getSyncQueue(): Promise<UPIReconcileRequest[]> {
 
 export async function removeFromSyncQueue(id: string): Promise<void> {
   await db.syncQueue.delete(id);
+}
+
+// Company Settings operations
+export async function getCompanySettings(): Promise<CompanySettings | null> {
+  const settings = await db.companySettings.toCollection().first();
+  return settings || null;
+}
+
+export async function saveCompanySettings(settings: Omit<CompanySettings, 'id' | 'updated_at'>): Promise<number> {
+  const existing = await db.companySettings.toCollection().first();
+  const now = new Date().toISOString();
+  
+  if (existing) {
+    await db.companySettings.update(existing.id!, {
+      ...settings,
+      updated_at: now
+    });
+    return existing.id!;
+  } else {
+    return await db.companySettings.add({
+      ...settings,
+      updated_at: now
+    });
+  }
+}
+
+// Customer Contacts operations
+export async function getAllCustomerContacts(): Promise<CustomerContact[]> {
+  return await db.customerContacts.orderBy('name').toArray();
+}
+
+export async function getCustomerContactByPhone(phone: string): Promise<CustomerContact | undefined> {
+  return await db.customerContacts.where('phone').equals(phone).first();
+}
+
+export async function saveCustomerContact(contact: Omit<CustomerContact, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
+  const now = new Date().toISOString();
+  const existing = await getCustomerContactByPhone(contact.phone);
+  
+  if (existing) {
+    await db.customerContacts.update(existing.id!, {
+      ...contact,
+      updated_at: now
+    });
+    return existing.id!;
+  } else {
+    return await db.customerContacts.add({
+      ...contact,
+      created_at: now,
+      updated_at: now
+    });
+  }
+}
+
+// Credit Entries operations
+export async function getAllCreditEntries(): Promise<CreditEntry[]> {
+  return await db.creditEntries.orderBy('created_at').reverse().toArray();
+}
+
+export async function getCreditEntryByInvoice(invoiceNumber: string): Promise<CreditEntry | undefined> {
+  return await db.creditEntries.where('invoiceNumber').equals(invoiceNumber).first();
+}
+
+export async function getPendingCreditEntries(): Promise<CreditEntry[]> {
+  return await db.creditEntries.where('status').equals('pending').toArray();
+}
+
+export async function createCreditEntry(entry: Omit<CreditEntry, 'id' | 'created_at' | 'updated_at'>): Promise<number> {
+  const now = new Date().toISOString();
+  return await db.creditEntries.add({
+    ...entry,
+    created_at: now,
+    updated_at: now
+  });
+}
+
+export async function updateCreditEntry(id: number, updates: Partial<CreditEntry>): Promise<void> {
+  const now = new Date().toISOString();
+  await db.creditEntries.update(id, {
+    ...updates,
+    updated_at: now
+  });
+}
+
+export async function markCreditAsPaid(id: number): Promise<void> {
+  const now = new Date().toISOString();
+  await db.creditEntries.update(id, {
+    status: 'paid',
+    paidAt: now,
+    updated_at: now
+  });
 }

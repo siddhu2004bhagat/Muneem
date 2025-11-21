@@ -50,123 +50,139 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 45 35% 97%;
-    --foreground: 145 30% 12%;
+    /* Tally-inspired color scheme */
+    /* Background: White (Tally Prime style) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 11%; /* Black #1D1D1B */
 
     --card: 0 0% 100%;
-    --card-foreground: 145 30% 12%;
+    --card-foreground: 0 0% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 145 30% 12%;
+    --popover-foreground: 0 0% 11%;
 
-    --primary: 145 70% 32%;
+    /* Primary: Sky Blue for menus (Tally Prime) #2A67B2 */
+    --primary: 210 60% 44%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 145 75% 42%;
+    --primary-glow: 210 65% 50%;
 
-    --secondary: 45 95% 50%;
-    --secondary-foreground: 145 30% 12%;
+    /* Secondary: Yellow for selections (Tally Prime) #FFC632 */
+    --secondary: 45 100% 60%;
+    --secondary-foreground: 0 0% 11%;
 
-    --muted: 45 20% 90%;
-    --muted-foreground: 145 15% 40%;
+    /* Muted: Light gray for backgrounds */
+    --muted: 210 20% 96%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 40 98% 48%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent: Yellow for highlights */
+    --accent: 45 100% 60%;
+    --accent-foreground: 0 0% 11%;
 
-    --destructive: 0 75% 52%;
+    /* Destructive: Tally Red #E30613 */
+    --destructive: 354 95% 45%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 145 20% 88%;
-    --input: 145 20% 93%;
-    --ring: 145 70% 32%;
+    /* Border: Light gray */
+    --border: 210 15% 88%;
+    --input: 210 15% 95%;
+    --ring: 210 60% 44%;
 
     --radius: 0.875rem;
 
-    --ledger-bg: 45 40% 98%;
-    --ledger-line: 145 25% 82%;
-    --ledger-header: 145 70% 28%;
+    /* Ledger: Clean white with subtle lines */
+    --ledger-bg: 0 0% 100%;
+    --ledger-line: 210 15% 90%;
+    --ledger-header: 210 60% 44%; /* Sky Blue */
 
-    --success: 145 75% 38%;
-    --warning: 40 98% 52%;
-    --info: 200 75% 48%;
+    /* Status colors */
+    --success: 145 60% 40%;
+    --warning: 45 100% 60%; /* Yellow */
+    --info: 210 60% 44%; /* Sky Blue */
 
-    --marigold: 40 98% 48%;
-    --emerald: 145 75% 35%;
-    --gold: 45 95% 50%;
+    /* Tally color palette */
+    --tally-red: 354 95% 45%; /* #E30613 */
+    --tally-blue: 210 60% 44%; /* #2A67B2 Sky Blue */
+    --tally-yellow: 45 100% 60%; /* #FFC632 */
+    --tally-black: 0 0% 11%; /* #1D1D1B */
+    --tally-white: 0 0% 100%; /* #FFFFFF */
 
-    --gradient-hero: linear-gradient(135deg, hsl(145 70% 32%) 0%, hsl(145 75% 42%) 50%, hsl(40 98% 48%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(45 50% 98%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(40 98% 48%) 0%, hsl(45 95% 50%) 100%);
-    --shadow-soft: 0 2px 12px hsl(145 35% 15% / 0.06);
-    --shadow-medium: 0 4px 20px hsl(145 35% 15% / 0.1);
-    --shadow-strong: 0 8px 32px hsl(145 35% 15% / 0.14);
-    --shadow-glow: 0 0 24px hsl(145 70% 42% / 0.3);
-    --shadow-accent: 0 4px 20px hsl(40 98% 48% / 0.25);
+    /* Gradients: Tally-inspired */
+    --gradient-hero: linear-gradient(135deg, hsl(210 60% 44%) 0%, hsl(210 65% 50%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(45 100% 60%) 0%, hsl(45 95% 55%) 100%);
+    --shadow-soft: 0 2px 12px hsl(210 20% 20% / 0.06);
+    --shadow-medium: 0 4px 20px hsl(210 20% 20% / 0.1);
+    --shadow-strong: 0 8px 32px hsl(210 20% 20% / 0.14);
+    --shadow-glow: 0 0 24px hsl(210 60% 44% / 0.3);
+    --shadow-accent: 0 4px 20px hsl(45 100% 60% / 0.25);
 
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
-    --sidebar-background: 145 25% 96%;
-    --sidebar-foreground: 145 30% 18%;
-    --sidebar-primary: 145 70% 32%;
+    /* Sidebar: Sky Blue menu background (Tally Prime style) */
+    --sidebar-background: 210 60% 96%;
+    --sidebar-foreground: 0 0% 11%;
+    --sidebar-primary: 210 60% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 145 20% 90%;
-    --sidebar-accent-foreground: 145 30% 18%;
-    --sidebar-border: 145 20% 88%;
-    --sidebar-ring: 145 70% 32%;
+    --sidebar-accent: 45 100% 60%; /* Yellow for selection */
+    --sidebar-accent-foreground: 0 0% 11%;
+    --sidebar-border: 210 15% 88%;
+    --sidebar-ring: 210 60% 44%;
   }
 
   .dark {
-    --background: 145 25% 8%;
-    --foreground: 45 20% 95%;
+    /* Dark mode: Maintain Tally colors but darker */
+    --background: 210 20% 8%;
+    --foreground: 0 0% 95%;
 
-    --card: 145 20% 12%;
-    --card-foreground: 45 20% 95%;
+    --card: 210 20% 12%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 145 20% 12%;
-    --popover-foreground: 45 20% 95%;
+    --popover: 210 20% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 145 65% 45%;
-    --primary-foreground: 145 25% 8%;
-    --primary-glow: 145 70% 55%;
+    --primary: 210 60% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 210 65% 60%;
 
-    --secondary: 40 80% 50%;
-    --secondary-foreground: 145 25% 8%;
+    --secondary: 45 90% 55%;
+    --secondary-foreground: 0 0% 11%;
 
-    --muted: 145 15% 18%;
-    --muted-foreground: 145 10% 65%;
+    --muted: 210 15% 18%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 40 85% 45%;
-    --accent-foreground: 145 25% 8%;
+    --accent: 45 90% 55%;
+    --accent-foreground: 0 0% 11%;
 
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 45 20% 95%;
+    --destructive: 354 85% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 145 15% 22%;
-    --input: 145 15% 18%;
-    --ring: 145 65% 45%;
+    --border: 210 15% 22%;
+    --input: 210 15% 18%;
+    --ring: 210 60% 55%;
 
-    --ledger-bg: 145 20% 10%;
-    --ledger-line: 145 15% 25%;
-    --ledger-header: 145 60% 40%;
+    --ledger-bg: 210 20% 10%;
+    --ledger-line: 210 15% 25%;
+    --ledger-header: 210 60% 50%;
 
-    --success: 145 65% 50%;
-    --warning: 40 90% 50%;
-    --info: 200 65% 55%;
+    --success: 145 55% 45%;
+    --warning: 45 90% 55%;
+    --info: 210 60% 55%;
 
-    --gradient-hero: linear-gradient(135deg, hsl(145 65% 35%), hsl(145 70% 45%));
-    --gradient-card: linear-gradient(180deg, hsl(145 20% 12%), hsl(145 18% 14%));
+    --gradient-hero: linear-gradient(135deg, hsl(210 60% 45%), hsl(210 65% 55%));
+    --gradient-card: linear-gradient(180deg, hsl(210 20% 12%), hsl(210 18% 14%));
     --shadow-soft: 0 2px 8px hsl(0 0% 0% / 0.3);
     --shadow-medium: 0 4px 16px hsl(0 0% 0% / 0.4);
     --shadow-strong: 0 8px 24px hsl(0 0% 0% / 0.5);
 
-    --sidebar-background: 145 20% 10%;
-    --sidebar-foreground: 45 15% 85%;
-    --sidebar-primary: 145 65% 45%;
-    --sidebar-primary-foreground: 145 25% 8%;
-    --sidebar-accent: 145 15% 18%;
-    --sidebar-accent-foreground: 45 15% 85%;
-    --sidebar-border: 145 15% 22%;
-    --sidebar-ring: 145 65% 45%;
+    --sidebar-background: 210 20% 10%;
+    --sidebar-foreground: 0 0% 85%;
+    --sidebar-primary: 210 60% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 45 90% 55%;
+    --sidebar-accent-foreground: 0 0% 11%;
+    --sidebar-border: 210 15% 22%;
+    --sidebar-ring: 210 60% 55%;
   }
 }
 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Plus, Download, Printer } from 'lucide-react';
+import { Edit, Trash2, Plus, Download, Printer, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
 import { LedgerFormatId, getFormatById } from '@/features/ledger-formats';
 import { getLedgerDataSource } from '@/services/ledger.datasource';
@@ -18,10 +18,11 @@ import '@/styles/print.css';
 interface LedgerTableProps {
   onAddEntry: () => void;
   onEditEntry?: (entry: LedgerEntry) => void; // Optional callback for edit
+  onQuickPenEntry?: () => void; // Optional callback for quick pen entry
   refresh: number;
 }
 
-export function LedgerTable({ onAddEntry, onEditEntry, refresh }: LedgerTableProps) {
+export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh }: LedgerTableProps) {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -682,6 +683,16 @@ export function LedgerTable({ onAddEntry, onEditEntry, refresh }: LedgerTablePro
             <Printer className="w-4 h-4 mr-2" />
             Print
           </Button>
+          {onQuickPenEntry && (
+            <Button 
+              onClick={onQuickPenEntry} 
+              className="gradient-hero touch-friendly hover-glow hover-scale"
+              title="Quick entry using pen input (recommended)"
+            >
+              <PenTool className="w-4 h-4 mr-2" />
+              Quick Pen Entry
+            </Button>
+          )}
           <Button onClick={onAddEntry} className="gradient-hero touch-friendly hover-glow hover-scale">
             <Plus className="w-4 h-4 mr-2" />
             New Entry
@@ -725,10 +736,18 @@ export function LedgerTable({ onAddEntry, onEditEntry, refresh }: LedgerTablePro
               Clear Filters
             </Button>
           ) : (
-            <Button onClick={onAddEntry} variant="outline" className="hover-lift">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Entry
-            </Button>
+            <div className="flex gap-2 justify-center">
+              {onQuickPenEntry && (
+                <Button onClick={onQuickPenEntry} className="gradient-hero hover-lift">
+                  <PenTool className="w-4 h-4 mr-2" />
+                  Quick Pen Entry
+                </Button>
+              )}
+              <Button onClick={onAddEntry} variant="outline" className="hover-lift">
+                <Plus className="w-4 h-4 mr-2" />
+                Form Entry
+              </Button>
+            </div>
           )}
         </Card>
       )}

@@ -23,14 +23,14 @@ const Header: React.FC<Props> = ({ onOpenPen }) => {
 
   return (
     <header className="border-b shadow-medium bg-card sticky top-0 z-50 backdrop-blur-sm bg-card/95">
-      <div className="container mx-auto px-4 py-4">
+      <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3 animate-slide-in">
             <div className="w-12 h-12 rounded-xl gradient-hero flex items-center justify-center shadow-medium">
               <span className="text-2xl font-bold text-white">D</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-[hsl(145_70%_32%)] to-[hsl(40_98%_48%)] bg-clip-text text-transparent">DigBahi</h1>
+              <h1 className="text-2xl font-bold text-primary">DigBahi</h1>
               <p className="text-xs text-muted-foreground">Professional Accounting</p>
             </div>
           </div>
@@ -46,7 +46,7 @@ const Header: React.FC<Props> = ({ onOpenPen }) => {
                 <SelectItem value="hi">हिन्दी</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={onOpenPen} className="touch-friendly gradient-hero hover:shadow-glow transition-smooth">
+            <Button onClick={onOpenPen} className="touch-friendly bg-primary hover:bg-primary/90 text-white transition-smooth">
               <PenTool className="w-4 h-4 mr-2" />
               Pen Input
             </Button>
