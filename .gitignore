@@ -57,6 +57,8 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
+backend/digbahi_local.db
+backend/test_inventory.db
 
 # Temporary files
 *.tmp
