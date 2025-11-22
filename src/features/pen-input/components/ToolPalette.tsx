@@ -22,13 +22,13 @@ const ToolPalette: React.FC<Props> = ({ onUndo, onRedo, onClear, onRecognize, is
   
   // NEW: Toggle for auto-showing correction overlay
   const [showCorrectionsOnRecognize, setShowCorrectionsOnRecognize] = useState(() => {
-    const saved = localStorage.getItem('digbahi_show_corrections_overlay');
+    const saved = localStorage.getItem('muneem_show_corrections_overlay');
     return saved !== null ? saved === 'true' : true; // Default: true
   });
 
   const handleToggleCorrections = (checked: boolean) => {
     setShowCorrectionsOnRecognize(checked);
-    localStorage.setItem('digbahi_show_corrections_overlay', checked.toString());
+      localStorage.setItem('muneem_show_corrections_overlay', checked.toString());
     toast.info(checked ? 'Corrections overlay enabled' : 'Corrections overlay disabled');
   };
 
@@ -120,16 +120,16 @@ const ToolPalette: React.FC<Props> = ({ onUndo, onRedo, onClear, onRecognize, is
 
       {/* Backup / Restore / Sync / AI Learning */}
       <div className="flex gap-1">
-        <Button size="sm" variant="ghost" title="Backup" onClick={() => document.dispatchEvent(new CustomEvent('digbahi:backup'))}>Backup</Button>
-        <Button size="sm" variant="ghost" title="Restore" onClick={() => document.dispatchEvent(new CustomEvent('digbahi:restore'))}>Restore</Button>
-        <Button size="sm" variant="ghost" title="Sync" onClick={() => document.dispatchEvent(new CustomEvent('digbahi:sync'))}>Sync</Button>
-        <Button size="sm" variant="ghost" title="Run AI Analysis" onClick={() => document.dispatchEvent(new CustomEvent('digbahi:ai-refresh'))}>
+        <Button size="sm" variant="ghost" title="Backup" onClick={() => document.dispatchEvent(new CustomEvent('muneem:backup'))}>Backup</Button>
+        <Button size="sm" variant="ghost" title="Restore" onClick={() => document.dispatchEvent(new CustomEvent('muneem:restore'))}>Restore</Button>
+        <Button size="sm" variant="ghost" title="Sync" onClick={() => document.dispatchEvent(new CustomEvent('muneem:sync'))}>Sync</Button>
+        <Button size="sm" variant="ghost" title="Run AI Analysis" onClick={() => document.dispatchEvent(new CustomEvent('muneem:ai-refresh'))}>
           <BarChart3 className="w-4 h-4" />
         </Button>
-        <Button size="sm" variant="ghost" title="Train AI Model" onClick={() => document.dispatchEvent(new CustomEvent('digbahi:ai-train'))}>
+        <Button size="sm" variant="ghost" title="Train AI Model" onClick={() => document.dispatchEvent(new CustomEvent('muneem:ai-train'))}>
           <Brain className="w-4 h-4" />
         </Button>
-        <Button size="sm" variant="ghost" title="Sync AI Model" onClick={() => document.dispatchEvent(new CustomEvent('digbahi:ai-sync'))}>
+        <Button size="sm" variant="ghost" title="Sync AI Model" onClick={() => document.dispatchEvent(new CustomEvent('muneem:ai-sync'))}>
           <Upload className="w-4 h-4" />
         </Button>
       </div>
