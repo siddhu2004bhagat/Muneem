@@ -117,7 +117,7 @@ class PenDB extends Dexie {
   notebookSections!: Dexie.Table<NotebookSectionRow, number>;
   
   constructor() {
-    super('digbahi_pen');
+    super('muneem_pen');
     // Version 1: Original schema
     this.version(1).stores({
       strokes: '++id, createdAt',

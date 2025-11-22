@@ -59,7 +59,7 @@ export function WhatsAppShare() {
     setInvoiceNumber(getNextInvoiceNumber());
     
     // Remember last GST rate
-    const lastGstRate = localStorage.getItem('digbahi_last_gst_rate');
+    const lastGstRate = localStorage.getItem('muneem_last_gst_rate');
     if (lastGstRate) {
       const rate = parseInt(lastGstRate, 10) as GSTRate;
       if (GST_RATES.includes(rate)) {
@@ -173,7 +173,7 @@ export function WhatsAppShare() {
 
     // Try WhatsApp Business API first (backend integration)
     try {
-      const result = await whatsappAPIService.sendOTP(customerPhone, 'digbahi_otp');
+      const result = await whatsappAPIService.sendOTP(customerPhone, 'muneem_otp');
       
       if (result.success) {
         // OTP sent successfully via WhatsApp Business API
@@ -204,7 +204,7 @@ export function WhatsAppShare() {
       
       if (lowerMessage.includes('template') && (lowerMessage.includes('not found') || lowerMessage.includes('does not exist'))) {
         toast.error('WhatsApp Template Missing', {
-          description: 'The "digbahi_otp" template needs to be created in WhatsApp Manager. Click here for instructions.',
+          description: 'The "muneem_otp" template needs to be created in WhatsApp Manager. Click here for instructions.',
           duration: 10000,
           action: {
             label: 'View Guide',
