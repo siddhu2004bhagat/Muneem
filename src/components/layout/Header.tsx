@@ -26,11 +26,11 @@ const Header: React.FC<Props> = ({ onOpenPen }) => {
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3 animate-slide-in">
-            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center shadow-medium">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-medium overflow-hidden">
               <img 
-                src="/logo.svg" 
+                src="/1.png" 
                 alt="MUNEEM Logo" 
-                className="w-8 h-8"
+                className="w-full h-full object-contain"
               />
             </div>
             <div>
