@@ -24,7 +24,7 @@ export function EntryForm({ entry, onSuccess, onCancel }: EntryFormProps) {
   // Smart date default: Remember last transaction date or use today
   const getSmartDate = (): string => {
     if (entry?.date) return entry.date;
-    const lastDate = localStorage.getItem('digbahi_last_transaction_date');
+    const lastDate = localStorage.getItem('muneem_last_transaction_date');
     if (lastDate) {
       const last = new Date(lastDate);
       const today = new Date();
