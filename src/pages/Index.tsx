@@ -70,7 +70,7 @@ const Index = () => {
     initializeDB();
     
     // Load saved format preference
-    const savedFormat = localStorage.getItem('digbahi_format') as LedgerFormatId;
+    const savedFormat = localStorage.getItem('muneem_format') as LedgerFormatId;
     if (savedFormat) {
       setSelectedFormat(savedFormat);
     }
@@ -101,7 +101,7 @@ const Index = () => {
         const blob = await exportBackup();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `digbahi-backup-${Date.now()}.digbahi`;
+        a.href = url; a.download = `muneem-backup-${Date.now()}.muneem`;
         document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
         toast.success('Backup created');
@@ -119,13 +119,13 @@ const Index = () => {
         toast.error('Sync failed');
       }
     };
-    document.addEventListener('digbahi:backup' as any, onBackup);
-    document.addEventListener('digbahi:restore' as any, onRestore);
-    document.addEventListener('digbahi:sync' as any, onSync);
+    document.addEventListener('muneem:backup' as any, onBackup);
+    document.addEventListener('muneem:restore' as any, onRestore);
+    document.addEventListener('muneem:sync' as any, onSync);
     return () => {
-      document.removeEventListener('digbahi:backup' as any, onBackup);
-      document.removeEventListener('digbahi:restore' as any, onRestore);
-      document.removeEventListener('digbahi:sync' as any, onSync);
+      document.removeEventListener('muneem:backup' as any, onBackup);
+      document.removeEventListener('muneem:restore' as any, onRestore);
+      document.removeEventListener('muneem:sync' as any, onSync);
     };
   }, []);
 
@@ -157,7 +157,7 @@ const Index = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
         {/* hidden file input for restore */}
-        <input ref={restoreInputRef} type="file" accept=".digbahi,application/octet-stream" className="hidden" onChange={handleRestoreFile} />
+        <input ref={restoreInputRef} type="file" accept=".muneem,application/octet-stream" className="hidden" onChange={handleRestoreFile} />
         {showPenCanvas ? (
           <ErrorBoundary fallback={<div className="p-6 border rounded-lg bg-card"><p className="text-destructive">⚠️ Pen input failed to load</p><Button onClick={() => setShowPenCanvas(false)} variant="outline">Back to Dashboard</Button></div>}>
             <Suspense fallback={<div className="p-6 text-center">🕓 Initializing pen input...</div>}>
@@ -247,7 +247,7 @@ const Index = () => {
                 currentFormat={selectedFormat}
                 onFormatSelect={(formatId) => {
                   setSelectedFormat(formatId);
-                  localStorage.setItem('digbahi_format', formatId);
+                  localStorage.setItem('muneem_format', formatId);
                 }}
               />
             </TabsContent>
@@ -263,7 +263,7 @@ const Index = () => {
                   setShowEntryForm(true);
                   // Trigger pen input modal after form opens
                   setTimeout(() => {
-                    const event = new CustomEvent('digbahi:open-pen-input');
+                    const event = new CustomEvent('muneem:open-pen-input');
                     window.dispatchEvent(event);
                   }, 100);
                 }}
