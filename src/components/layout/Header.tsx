@@ -29,12 +29,12 @@ const Header: React.FC<Props> = ({ onOpenPen }) => {
             <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center shadow-medium">
               <img 
                 src="/logo.svg" 
-                alt="DigBahi Logo" 
+                alt="MUNEEM Logo" 
                 className="w-8 h-8"
               />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-primary">DigBahi</h1>
+              <h1 className="text-2xl font-bold text-primary">MUNEEM</h1>
               <p className="text-xs text-muted-foreground">Professional Accounting</p>
             </div>
           </div>

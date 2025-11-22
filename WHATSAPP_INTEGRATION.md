@@ -7,7 +7,7 @@
 
 ## Overview
 
-DigBahi integrates with WhatsApp Business API (Cloud API) for automated OTP delivery, invoice sharing, and report delivery. The system includes comprehensive error handling and fallback mechanisms.
+MUNEEM integrates with WhatsApp Business API (Cloud API) for automated OTP delivery, invoice sharing, and report delivery. The system includes comprehensive error handling and fallback mechanisms.
 
 ---
 
@@ -31,14 +31,14 @@ DigBahi integrates with WhatsApp Business API (Cloud API) for automated OTP deli
 
 ### 2. Create WhatsApp Template
 
-**Required Template**: `digbahi_otp`
+**Required Template**: `muneem_otp`
 
 1. Go to [WhatsApp Manager](https://business.facebook.com/wa/manage/message-templates/)
 2. Create new template:
-   - **Name**: `digbahi_otp`
+   - **Name**: `muneem_otp`
    - **Category**: OTP
    - **Language**: English (US) or English (India)
-   - **Body**: `Your DigBahi OTP is {{1}}. This OTP is valid for 10 minutes.`
+   - **Body**: `Your MUNEEM OTP is {{1}}. This OTP is valid for 10 minutes.`
 3. Wait for approval (5-10 minutes)
 
 ### 3. Add Test Phone Numbers
@@ -115,7 +115,7 @@ For testing, add phone numbers to allowed list:
 
 ### OTP Not Sending
 
-1. **Check Template**: Ensure `digbahi_otp` template exists and is approved
+1. **Check Template**: Ensure `muneem_otp` template exists and is approved
 2. **Check Token**: Verify access token is valid (not expired)
 3. **Check Phone**: Ensure phone number is in allowed list (for testing)
 4. **Check Logs**: Review backend logs for specific error codes
@@ -133,7 +133,7 @@ For testing, add phone numbers to allowed list:
 
 ### Create WhatsApp Template
 
-The WhatsApp template `digbahi_otp` **must exist** in your WhatsApp Business Account.
+The WhatsApp template `muneem_otp` **must exist** in your WhatsApp Business Account.
 
 **Error Code**: 132001 - "Template name does not exist in the translation"
 
@@ -148,14 +148,14 @@ The WhatsApp template `digbahi_otp` **must exist** in your WhatsApp Business Acc
    - Select **"Start from scratch"**
 
 3. **Template Details**
-   - **Name**: `digbahi_otp` (must be exactly this, lowercase)
+   - **Name**: `muneem_otp` (must be exactly this, lowercase)
    - **Category**: Select **"OTP"**
    - **Language**: Select **"English (US)"** or **"English (India)"**
 
 4. **Template Content**
    - **Body Text:**
      ```
-     Your DigBahi OTP is {{1}}. This OTP is valid for 10 minutes.
+     Your MUNEEM OTP is {{1}}. This OTP is valid for 10 minutes.
      ```
    - **Important:** Add parameter `{{1}}` where the OTP code will appear
    - This is a single parameter for the 6-digit OTP
@@ -166,7 +166,7 @@ The WhatsApp template `digbahi_otp` **must exist** in your WhatsApp Business Acc
 
 6. **Verify Template**
    - Once approved, go back to templates page
-   - Search for `digbahi_otp`
+   - Search for `muneem_otp`
    - Status should show: **"Approved"**
 
 ### After Template is Created

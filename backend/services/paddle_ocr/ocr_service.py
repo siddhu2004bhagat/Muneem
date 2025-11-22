@@ -7,7 +7,7 @@ import io
 from PIL import Image
 
 
-app = FastAPI(title="DigBahi PaddleOCR Service")
+app = FastAPI(title="MUNEEM PaddleOCR Service")
 ocr = PaddleOCR(use_angle_cls=True, lang='en')
 
 
@@ -19,7 +19,7 @@ def health_check():
 @app.get("/")
 def root():
     return {
-        "service": "DigBahi PaddleOCR Service",
+        "service": "MUNEEM PaddleOCR Service",
         "status": "running",
         "endpoints": {
             "health": "/health",

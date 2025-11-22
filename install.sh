@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# DigBahi - One-Click Installation Script
+# MUNEEM - One-Click Installation Script
 # Installs all dependencies for Frontend, Backend, and PaddleOCR
 
 set -e  # Exit on error
@@ -17,7 +17,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   DigBahi - One-Click Installation   ║${NC}"
+echo -e "${BLUE}║   MUNEEM - One-Click Installation   ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════╝${NC}"
 echo ""
 

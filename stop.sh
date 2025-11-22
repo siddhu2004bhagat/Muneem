@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# DigBahi Application Stop Script
+# MUNEEM Application Stop Script
 
-echo "🛑 Stopping DigBahi Application..."
+echo "🛑 Stopping MUNEEM Application..."
 
 # Stop services on specific ports
 lsof -ti:5173,8000,9000 2>/dev/null | xargs kill -9 2>/dev/null || true

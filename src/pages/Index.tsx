@@ -338,11 +338,11 @@ const Index = () => {
                 <span className="text-lg font-bold text-white">D</span>
               </div>
               <span className="text-lg font-bold bg-gradient-to-r from-[hsl(145_70%_32%)] to-[hsl(40_98%_48%)] bg-clip-text text-transparent">
-                DigBahi
+                MUNEEM
               </span>
             </div>
             <div className="text-sm text-muted-foreground space-y-1">
-              <p className="font-medium">DigBahi Accounting Solutions LLP © 2025</p>
+              <p className="font-medium">MUNEEM Accounting Solutions © 2025</p>
               <p>Professional accounting software for Indian SMEs</p>
             </div>
           </div>

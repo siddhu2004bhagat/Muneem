@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# DigBahi Application Startup Script
+# MUNEEM Application Startup Script
 # Starts all services with a single command
 
 set -e
 
-echo "🚀 Starting DigBahi Application..."
+echo "🚀 Starting MUNEEM Application..."
 echo ""
 
 # Get the script directory

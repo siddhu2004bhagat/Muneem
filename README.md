@@ -1,4 +1,4 @@
-# DigBahi - Professional Accounting for Indian SMEs
+# MUNEEM - Professional Accounting for Indian SMEs
 
 > Tablet-based accounting software with pen input, GST compliance, and offline capability. Built as a Progressive Web App for Indian small businesses.
 
@@ -37,8 +37,8 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/soni-pvt-ltd/DigBahi.git
-cd DigBahi
+git clone https://github.com/soni-pvt-ltd/MUNEEM.git
+cd MUNEEM
 
 # One-click install all dependencies
 ./install.sh
@@ -60,8 +60,8 @@ npm run install:all
 
 #### 1. Clone the Repository
 ```bash
-git clone https://github.com/soni-pvt-ltd/DigBahi.git
-cd DigBahi
+git clone https://github.com/soni-pvt-ltd/MUNEEM.git
+cd MUNEEM
 ```
 
 #### 2. Install Frontend Dependencies
@@ -140,7 +140,7 @@ Visit `http://localhost:5173` in your browser.
 
 ## 🔄 Ledger API Mode
 
-DigBahi supports two data modes:
+MUNEEM supports two data modes:
 
 1. **Local Mode (Default):** All data stored locally in browser IndexedDB
 2. **API Mode (Optional):** Sync with backend server for multi-device access
@@ -218,12 +218,12 @@ When `VITE_ENABLE_LEDGER_API=false`:
 
 ### On Desktop (Chrome/Edge)
 1. Click the install icon (⊕) in the address bar
-2. Or go to Settings → Install DigBahi
+2. Or go to Settings → Install MUNEEM
 3. The app opens as a standalone window
 
 ## 🎨 Design System
 
-DigBahi uses a professional Indian business aesthetic:
+MUNEEM uses a professional Indian business aesthetic:
 - **Primary Green** (`#2d7a4a`) - Trust, growth, prosperity
 - **Secondary Gold** (`#e8b923`) - Premium, traditional
 - **Ledger Paper** - Traditional accounting book feel
@@ -349,7 +349,7 @@ npm run preview
 
 ## 📖 GST Compliance
 
-DigBahi implements official Indian GST tax slabs:
+MUNEEM implements official Indian GST tax slabs:
 - **0%** - Essential goods (grains, dairy, healthcare)
 - **5%** - Household necessities (sugar, tea, edible oils)
 - **12%** - Processed foods, business services
@@ -384,21 +384,21 @@ npm run lint
 **Ramesh Kumar** (42, Retail Owner)
 - Needs: Simple pen input, GST compliance
 - Pain: Desktop software costs and complexity
-- Solution: DigBahi's tablet + pen interface
+- Solution: MUNEEM's tablet + pen interface
 
 **Priya Sharma** (30, Freelance Consultant)
 - Needs: Portable accounting tool
 - Pain: Limited mobile app features
-- Solution: DigBahi's professional PWA
+- Solution: MUNEEM's professional PWA
 
 **Amit Patel** (38, Manufacturing SME)
 - Needs: Secure, scalable GST/UPI integration
 - Pain: Data security and hardware costs
-- Solution: DigBahi's offline-first approach
+- Solution: MUNEEM's offline-first approach
 
 ## 📄 License
 
-© 2025 DigBahi Accounting Solutions LLP. All rights reserved.
+© 2025 MUNEEM Accounting Solutions LLP. All rights reserved.
 
 ## 🗺️ Roadmap
 

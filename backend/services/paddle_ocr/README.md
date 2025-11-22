@@ -1,6 +1,6 @@
 ## PaddleOCR Microservice
 
-Self-hosted handwriting OCR service for DigBahi. Runs PaddleOCR behind a small FastAPI server.
+Self-hosted handwriting OCR service for MUNEEM. Runs PaddleOCR behind a small FastAPI server.
 
 ### Requirements
 

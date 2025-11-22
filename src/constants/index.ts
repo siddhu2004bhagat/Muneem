@@ -1,9 +1,9 @@
 // Application constants
 export const APP_CONFIG = {
-  name: 'DigBahi',
+  name: 'MUNEEM',
   version: '1.0.0',
   description: 'Professional Accounting for Indian SMEs',
-  author: 'DigBahi Accounting Solutions LLP',
+  author: 'MUNEEM Accounting Solutions',
   themeColor: '#2d7a4a',
 } as const;
 
@@ -84,9 +84,9 @@ export const API_ENDPOINTS = {
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  USER_PREFERENCES: 'digbahi_user_preferences',
-  CANVAS_SETTINGS: 'digbahi_canvas_settings',
-  RECENT_TRANSACTIONS: 'digbahi_recent_transactions',
+  USER_PREFERENCES: 'muneem_user_preferences',
+  CANVAS_SETTINGS: 'muneem_canvas_settings',
+  RECENT_TRANSACTIONS: 'muneem_recent_transactions',
 } as const;
 
 // Animation durations (ms)

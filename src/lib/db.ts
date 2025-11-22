@@ -81,7 +81,7 @@ export interface CreditEntry {
   updated_at: string;
 }
 
-export class DigBahiDB extends Dexie {
+export class MuneemDB extends Dexie {
   users!: Table<User>;
   ledger!: Table<LedgerEntry>;
   gstRecords!: Table<GSTRecord>;
@@ -94,7 +94,7 @@ export class DigBahiDB extends Dexie {
   creditEntries!: Table<CreditEntry>;
 
   constructor() {
-    super('digbahi');
+    super('muneem');
     
     // Version 2: Initial schema
     this.version(2).stores({
@@ -170,7 +170,7 @@ export class DigBahiDB extends Dexie {
   }
 }
 
-export const db = new DigBahiDB();
+export const db = new MuneemDB();
 
 // Initialize with demo user if empty
 export async function initializeDB() {

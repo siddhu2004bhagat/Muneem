@@ -1,4 +1,4 @@
-# DigBahi - Setup Guide for Team
+# MUNEEM - Setup Guide for Team
 
 **Quick setup guide for team members to get the application running locally.**
 
@@ -31,8 +31,8 @@ npm --version
 
 ```bash
 # Clone repository
-git clone https://github.com/soni-pvt-ltd/DigBahi.git
-cd DigBahi
+git clone https://github.com/soni-pvt-ltd/MUNEEM.git
+cd MUNEEM
 
 # Run one-click install script
 ./install.sh
@@ -55,8 +55,8 @@ npm run install:all
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/soni-pvt-ltd/DigBahi.git
-cd DigBahi
+git clone https://github.com/soni-pvt-ltd/MUNEEM.git
+cd MUNEEM
 ```
 
 ### 2. Install Frontend Dependencies
@@ -279,7 +279,7 @@ curl http://localhost:8000/api/v1/health
 ```
 
 ### 2. Check Frontend
-Open http://localhost:5173 in browser - should see DigBahi login page
+Open http://localhost:5173 in browser - should see MUNEEM login page
 
 ### 3. Check OCR (if installed)
 ```bash
