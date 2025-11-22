@@ -293,7 +293,7 @@ export function EntryForm({ entry, onSuccess, onCancel }: EntryFormProps) {
                 >
                   Yesterday
                 </Button>
-                {localStorage.getItem('digbahi_last_transaction_date') && (
+                {localStorage.getItem('muneem_last_transaction_date') && (
                   <Button
                     type="button"
                     variant="outline"
