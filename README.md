@@ -24,17 +24,82 @@
 
 ## 🚀 Quick Start
 
+### Prerequisites
+- **Node.js**: 18+ (check with `node --version`)
+- **Python**: 3.8+ (check with `python3 --version`)
+- **npm**: Comes with Node.js
+
 ### Demo Credentials
 - **Username:** `demo`
 - **PIN:** `1234`
 
-### Local Development
+### Setup Instructions
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/soni-pvt-ltd/DigBahi.git
+cd DigBahi
+```
+
+#### 2. Install Frontend Dependencies
+```bash
+npm install
+```
+
+#### 3. Setup Backend
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+```
+
+#### 4. Setup PaddleOCR Service (Optional)
+```bash
+cd backend/services/paddle_ocr
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cd ../../..
+```
+
+#### 5. Configure Environment Variables (Optional)
+```bash
+# Frontend (optional - defaults work for local dev)
+cp .env.example .env
+
+# Backend (required for WhatsApp features)
+cd backend
+cp .env.example .env
+# Edit .env and add your WhatsApp API credentials
+cd ..
+```
+
+#### 6. Start the Application
+```bash
+# Single command to start everything
+npm start
+# OR
+./start.sh
+
+# This starts:
+# - Frontend on http://localhost:5173
+# - Backend API on http://localhost:8000
+# - PaddleOCR on http://localhost:9000
+```
+
+#### 7. Stop the Application
+```bash
+npm stop
+# OR
+./stop.sh
+```
+
+### Development Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
+# Start development server (frontend only)
 npm run dev
 
 # Build for production
@@ -44,7 +109,7 @@ npm run build
 npm run preview
 ```
 
-Visit `http://localhost:8080` in your browser.
+Visit `http://localhost:5173` in your browser.
 
 ## 🔄 Ledger API Mode
 
