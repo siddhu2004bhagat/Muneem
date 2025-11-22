@@ -26,8 +26,12 @@ const Header: React.FC<Props> = ({ onOpenPen }) => {
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-3 animate-slide-in">
-            <div className="w-12 h-12 rounded-xl gradient-hero flex items-center justify-center shadow-medium">
-              <span className="text-2xl font-bold text-white">D</span>
+            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center shadow-medium">
+              <img 
+                src="/logo.svg" 
+                alt="DigBahi Logo" 
+                className="w-8 h-8"
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">DigBahi</h1>
