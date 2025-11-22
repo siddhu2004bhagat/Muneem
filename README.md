@@ -1,75 +1,190 @@
-# MUNEEM - Professional Accounting for Indian SMEs
+# MUNEEM
 
-> Tablet-based accounting software with pen input, GST compliance, and offline capability. Built as a Progressive Web App for Indian small businesses.
+<div align="center">
 
-## 🌟 Features
+**Professional Accounting Software for Indian SMEs**
+
+*Tablet-based accounting with pen input, GST compliance, and offline capability*
+
+[![License](https://img.shields.io/badge/license-Proprietary-blue.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
+
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Support](#-support)
+
+</div>
+
+---
+
+## 📋 Table of Contents
+
+- [Overview](#-overview)
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [Installation](#-installation)
+- [Configuration](#-configuration)
+- [Usage Guide](#-usage-guide)
+- [Architecture](#-architecture)
+- [Development](#-development)
+- [Deployment](#-deployment)
+- [Troubleshooting](#-troubleshooting)
+- [Contributing](#-contributing)
+- [Support](#-support)
+- [License](#-license)
+
+---
+
+## 🎯 Overview
+
+**MUNEEM** is a modern, tablet-first accounting solution designed specifically for Indian small and medium enterprises (SMEs). Built as a Progressive Web App (PWA), it combines traditional accounting practices with cutting-edge technology, offering a seamless experience that works offline and integrates with modern payment systems.
+
+### Key Highlights
+
+- 🖊️ **Pen Input Interface** - Natural handwriting recognition for traditional accounting feel
+- 📱 **Progressive Web App** - Install on any device, works offline
+- 🇮🇳 **GST Compliant** - Automatic tax calculations with official Indian GST slabs
+- 🔒 **Secure & Private** - All data stored locally with encryption
+- 💬 **WhatsApp Integration** - Send invoices and reports directly via WhatsApp Business API
+- 📊 **Comprehensive Reports** - P&L statements, GST reports, and ledger summaries
+- 🌐 **Multi-lingual** - English and Hindi (हिन्दी) support
+
+---
+
+## ✨ Features
 
 ### Core Functionality
-- ✅ **PIN-based Authentication** - Secure role-based access (Owner/Accountant/Employee)
-- ✅ **Pen Input Canvas** - Traditional handwriting feel with TensorFlow.js OCR ready
-- ✅ **Digital Ledger** - Professional table view for all transactions
-- ✅ **GST Compliance** - Automatic calculation with official slabs (0%, 5%, 12%, 18%, 28%)
-- ✅ **Transaction Types** - Sales, Purchases, Expenses, Receipts
-- ✅ **Dashboard Analytics** - Real-time P&L, GST summary, business insights
-- ✅ **Offline-First** - Works without internet using IndexedDB with encryption
-- ✅ **Mobile-Optimized** - Responsive design for tablets and phones
 
-### Enhanced Features
-- ✅ **PDF Exports** - P&L statements, GST reports, and ledger summaries
-- ✅ **CSV Export** - Export ledger data for Tally/Excel import
-- ✅ **Multi-lingual** - English and Hindi (हिन्दी) support
-- ✅ **UPI Integration** - Payment reconciliation stubs (demo mode)
-- ✅ **WhatsApp Billing** - Generate and share invoices via WhatsApp
-- ✅ **Credit Management** - Track receivables with OTP-based customer consent
+| Feature | Description |
+|---------|-------------|
+| **🔐 PIN Authentication** | Secure role-based access control (Owner/Accountant/Employee) |
+| **🖊️ Pen Input Canvas** | Handwriting recognition with OCR support (TensorFlow.js/PaddleOCR) |
+| **📖 Digital Ledger** | Professional transaction management with filtering and search |
+| **💰 GST Compliance** | Automatic calculation with official slabs (0%, 5%, 12%, 18%, 28%) |
+| **📝 Transaction Types** | Sales, Purchases, Expenses, Receipts with full audit trail |
+| **📊 Dashboard Analytics** | Real-time P&L, GST summary, and business insights |
+| **📴 Offline-First** | Complete functionality without internet using IndexedDB |
+| **📱 Mobile-Optimized** | Responsive design optimized for tablets and phones |
+
+### Advanced Features
+
+| Feature | Description |
+|---------|-------------|
+| **📄 PDF Exports** | Professional P&L statements, GST reports, and ledger summaries |
+| **📊 CSV Export** | Export ledger data for Tally/Excel import |
+| **🌍 Multi-lingual** | Full support for English and Hindi (हिन्दी) |
+| **💳 UPI Integration** | Payment reconciliation and QR code generation |
+| **💬 WhatsApp Billing** | Generate and share invoices/reports via WhatsApp Business API |
+| **📋 Credit Management** | Track receivables with OTP-based customer consent |
+| **📦 Inventory Management** | Stock tracking and inventory reports |
+| **🤖 AI Analytics** | Business insights and predictive analytics (optional) |
+
+---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Node.js**: 18+ (check with `node --version`)
-- **Python**: 3.8+ (check with `python3 --version`)
-- **npm**: Comes with Node.js
+
+Before you begin, ensure you have the following installed:
+
+- **Node.js** 18+ ([Download](https://nodejs.org/))
+- **Python** 3.8+ ([Download](https://www.python.org/))
+- **npm** (comes with Node.js)
+- **Git** ([Download](https://git-scm.com/))
+
+Verify installations:
+
+```bash
+node --version    # Should be 18.x or higher
+python3 --version # Should be 3.8.x or higher
+npm --version     # Should be 9.x or higher
+git --version     # Any recent version
+```
 
 ### Demo Credentials
+
+For testing purposes, use these default credentials:
+
 - **Username:** `demo`
 - **PIN:** `1234`
 
-### Quick Setup (One-Click Installation)
+> ⚠️ **Security Note:** Change these credentials in production environments.
+
+### One-Command Setup
 
 ```bash
-# Clone repository
-git clone https://github.com/soni-pvt-ltd/MUNEEM.git
-cd MUNEEM
+# Clone the repository
+git clone https://github.com/soni-pvt-ltd/DigBahi.git
+cd digi-bahi-ink
 
-# One-click install all dependencies
-./install.sh
-# OR
+# Install all dependencies (frontend + backend)
 npm run install:all
+# OR
+./install.sh
 ```
 
-**What it does:**
-- ✅ Installs frontend dependencies (npm)
-- ✅ Sets up backend virtual environment and dependencies
-- ✅ Optionally installs PaddleOCR (you'll be prompted)
+**What happens:**
+- ✅ Installs frontend dependencies (npm packages)
+- ✅ Sets up Python virtual environment
+- ✅ Installs backend dependencies
+- ✅ Optionally installs PaddleOCR service (prompted)
 
 **Expected time:** 10-15 minutes (first time)
 
-### Manual Setup (Alternative)
+### Start the Application
 
-<details>
-<summary>Click to expand manual setup instructions</summary>
-
-#### 1. Clone the Repository
 ```bash
-git clone https://github.com/soni-pvt-ltd/MUNEEM.git
-cd MUNEEM
+# Start all services (Frontend, Backend, PaddleOCR)
+npm start
+# OR
+./start.sh
 ```
 
-#### 2. Install Frontend Dependencies
+This starts:
+- 🌐 **Frontend** on [http://localhost:5173](http://localhost:5173)
+- 🔧 **Backend API** on [http://localhost:8000](http://localhost:8000)
+- 📝 **PaddleOCR** on [http://localhost:9000](http://localhost:9000)
+
+### Stop the Application
+
+```bash
+npm stop
+# OR
+./stop.sh
+```
+
+---
+
+## 📦 Installation
+
+### Option 1: Automated Installation (Recommended)
+
+The `install.sh` script handles everything automatically:
+
+```bash
+./install.sh
+```
+
+### Option 2: Manual Installation
+
+<details>
+<summary><b>Click to expand manual installation steps</b></summary>
+
+#### Step 1: Clone Repository
+
+```bash
+git clone https://github.com/soni-pvt-ltd/DigBahi.git
+cd digi-bahi-ink
+```
+
+#### Step 2: Install Frontend Dependencies
+
 ```bash
 npm install
 ```
 
-#### 3. Setup Backend
+#### Step 3: Setup Backend
+
 ```bash
 cd backend
 python3 -m venv venv
@@ -78,7 +193,8 @@ pip install -r requirements.txt
 cd ..
 ```
 
-#### 4. Setup PaddleOCR Service (Optional)
+#### Step 4: Setup PaddleOCR Service (Optional)
+
 ```bash
 cd backend/services/paddle_ocr
 python3 -m venv venv
@@ -87,7 +203,8 @@ pip install -r requirements.txt
 cd ../../..
 ```
 
-#### 5. Configure Environment Variables (Optional)
+#### Step 5: Configure Environment Variables
+
 ```bash
 # Frontend (optional - defaults work for local dev)
 cp .env.example .env
@@ -101,27 +218,180 @@ cd ..
 
 </details>
 
-### Start the Application
+---
 
-```bash
-# Single command to start everything
-npm start
-# OR
-./start.sh
+## ⚙️ Configuration
 
-# This starts:
-# - Frontend on http://localhost:5173
-# - Backend API on http://localhost:8000
-# - PaddleOCR on http://localhost:9000
+### Environment Variables
+
+#### Frontend (`.env`)
+
+```env
+# API Configuration
+VITE_API_URL=http://localhost:8000
+VITE_ENABLE_LEDGER_API=false
+VITE_ENABLE_UPI=true
+VITE_ENABLE_GST_REPORTS=true
+VITE_ENABLE_INVENTORY=true
 ```
 
-### Stop the Application
+#### Backend (`backend/.env`)
 
-```bash
-npm stop
-# OR
-./stop.sh
+```env
+# WhatsApp Business API Configuration
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_ACCESS_TOKEN=your_access_token
+WHATSAPP_BUSINESS_ACCOUNT_ID=your_business_account_id
+WHATSAPP_API_VERSION=v22.0
+
+# Database Configuration
+DATABASE_URL=sqlite:///./muneem_local.db
+
+# Security
+SECRET_KEY=your_secret_key_here
 ```
+
+> 📖 **See:** [WHATSAPP_INTEGRATION.md](./WHATSAPP_INTEGRATION.md) for detailed WhatsApp setup instructions.
+
+### WhatsApp Business API Setup
+
+To enable WhatsApp features (OTP, invoice sharing):
+
+1. Create a Meta Business Account
+2. Set up WhatsApp Business API
+3. Create message templates (e.g., `muneem_otp`)
+4. Add credentials to `backend/.env`
+5. Add test phone numbers to allowed list
+
+> 📖 **Detailed Guide:** [WHATSAPP_INTEGRATION.md](./WHATSAPP_INTEGRATION.md)
+
+---
+
+## 📖 Usage Guide
+
+### Adding Transactions
+
+#### Method 1: Pen Input (Recommended for Tablets)
+
+1. Click **"Pen Input"** button in header
+2. Write transaction details on canvas (e.g., "Sale 1000 2025-09-30")
+3. Click **"Recognize"** to convert handwriting to text
+4. Review and confirm the entry
+5. Save to ledger
+
+#### Method 2: Form Entry
+
+1. Navigate to **"Ledger"** tab
+2. Click **"New Entry"** button
+3. Fill in:
+   - Date
+   - Description
+   - Party Name
+   - Amount
+   - Transaction Type (Sale/Purchase/Expense/Receipt)
+   - GST Rate
+4. Preview GST calculation
+5. Click **"Save Entry"**
+
+### Generating Reports
+
+1. Navigate to **"Reports"** tab
+2. Select report type:
+   - **P&L Statement** - Income vs. expenses with net profit/loss
+   - **GST Report** - Collected vs. paid with net liability
+   - **Ledger Summary** - Complete transaction history
+3. Click **"Export PDF"** or **"Export CSV"**
+
+### WhatsApp Billing
+
+1. Navigate to **"WhatsApp"** tab
+2. Select bill type (Invoice/Receipt)
+3. Enter customer details and amount
+4. Click **"Share via WhatsApp"**
+5. PDF invoice is generated and sent via WhatsApp Business API
+
+### Credit Management
+
+1. Go to **"Credit"** tab
+2. Enter customer name and credit amount
+3. Request OTP for customer consent
+4. Verify OTP and record credit sale
+5. Track pending payments and mark as paid
+
+### Language Switching
+
+1. Click language selector in header (🌐 Globe icon)
+2. Choose **English** or **हिन्दी** (Hindi)
+3. All UI labels update instantly
+
+---
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+#### Frontend
+- **Framework:** React 18 with TypeScript
+- **Build Tool:** Vite
+- **Styling:** Tailwind CSS with custom design system
+- **UI Components:** shadcn/ui (customized)
+- **State Management:** React Hooks + Context API
+- **Database:** Dexie.js (IndexedDB wrapper)
+- **PDF Generation:** jsPDF
+- **OCR:** TensorFlow.js / PaddleOCR
+- **Internationalization:** i18next + react-i18next
+
+#### Backend
+- **Framework:** FastAPI (Python)
+- **Database:** SQLite (development) / PostgreSQL (production)
+- **API:** RESTful API with WebSocket support
+- **OCR Service:** PaddleOCR (optional)
+- **WhatsApp Integration:** Meta WhatsApp Business API
+
+### Project Structure
+
+```
+digi-bahi-ink/
+├── src/
+│   ├── components/       # Reusable UI components
+│   ├── features/         # Feature-based modules
+│   │   ├── payments/     # Payment integrations
+│   │   ├── pen-input/    # Pen input functionality
+│   │   ├── reports/      # Reporting features
+│   │   └── ...
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility libraries
+│   ├── services/         # Business logic services
+│   └── pages/            # Page components
+├── backend/
+│   ├── app/
+│   │   ├── api/          # API endpoints
+│   │   ├── services/     # Business logic
+│   │   └── main.py       # FastAPI application
+│   └── services/
+│       └── paddle_ocr/   # OCR service
+├── public/               # Static assets
+└── dist/                 # Production build output
+```
+
+> 📖 **Detailed Architecture:** [ARCHITECTURE.md](./ARCHITECTURE.md)
+
+### Data Flow
+
+1. **Local Mode (Default):**
+   - Data stored in browser IndexedDB
+   - No network requests
+   - Works completely offline
+
+2. **API Mode (Optional):**
+   - Data synced with backend server
+   - WebSocket for real-time updates
+   - Multi-device access
+   - Automatic fallback to local mode
+
+---
+
+## 💻 Development
 
 ### Development Commands
 
@@ -129,206 +399,53 @@ npm stop
 # Start development server (frontend only)
 npm run dev
 
+# Start all services (frontend + backend + OCR)
+npm start
+
 # Build for production
 npm run build
 
 # Preview production build
 npm run preview
+
+# Run linter
+npm run lint
+
+# Run OCR tests
+npm run ocr:test
 ```
 
-Visit `http://localhost:5173` in your browser.
+### Development Workflow
 
-## 🔄 Ledger API Mode
-
-MUNEEM supports two data modes:
-
-1. **Local Mode (Default):** All data stored locally in browser IndexedDB
-2. **API Mode (Optional):** Sync with backend server for multi-device access
-
-### Enabling API Mode
-
-1. Create a `.env` file in the project root (copy from `.env.example`):
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Set environment variables in `.env`:
-   ```bash
-   VITE_ENABLE_LEDGER_API=true
-   VITE_API_BASE_URL=http://localhost:8000
-   ```
-
-3. Start the backend server (if not already running):
-   ```bash
-   cd backend
-   python3 -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-4. Restart the frontend development server:
+1. **Frontend Development:**
    ```bash
    npm run dev
+   # Frontend runs on http://localhost:5173
    ```
 
-### Features in API Mode
+2. **Backend Development:**
+   ```bash
+   cd backend
+   source venv/bin/activate
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
 
-- **Real-time Sync:** WebSocket updates across devices
-- **Server Storage:** Data stored on backend server
-- **Multi-device:** Access from multiple tablets/computers
-- **Automatic Fallback:** Falls back to local mode if API unavailable
+3. **API Documentation:**
+   - Swagger UI: [http://localhost:8000/docs](http://localhost:8000/docs)
+   - ReDoc: [http://localhost:8000/redoc](http://localhost:8000/redoc)
 
-### WebSocket Connection
+### Code Style
 
-When API mode is enabled, the app connects to:
-```
-ws://localhost:8000/ws
-```
-(URL is automatically derived from `VITE_API_BASE_URL`)
+- **TypeScript:** Strict mode enabled
+- **ESLint:** Configured with React and TypeScript rules
+- **Prettier:** Code formatting (if configured)
+- **Conventions:** Follow React best practices and TypeScript guidelines
 
-### Fallback Behavior
+---
 
-If API is unreachable or returns errors:
-- Automatic fallback to local Dexie storage
-- Toast notification: "Server unreachable. Switched to local-only mode."
-- All features continue working (filters, pagination, export, print)
-- No data loss or white screens
-- Seamless user experience
+## 🚢 Deployment
 
-### Local Mode (Default)
-
-When `VITE_ENABLE_LEDGER_API=false`:
-- All data stored in browser IndexedDB
-- No network requests
-- Works completely offline
-- Fast and responsive
-- Perfect for single-device usage
-
-## 📱 Installing as a PWA
-
-### On Android Tablet/Phone
-1. Open the app in Chrome browser
-2. Tap the menu (⋮) and select "Add to Home Screen"
-3. The app will install like a native app
-4. Launch from your home screen for fullscreen experience
-
-### On iOS/iPad
-1. Open the app in Safari
-2. Tap the Share button
-3. Select "Add to Home Screen"
-4. The app installs as a web app
-
-### On Desktop (Chrome/Edge)
-1. Click the install icon (⊕) in the address bar
-2. Or go to Settings → Install MUNEEM
-3. The app opens as a standalone window
-
-## 🎨 Design System
-
-MUNEEM uses a professional Indian business aesthetic:
-- **Primary Green** (`#2d7a4a`) - Trust, growth, prosperity
-- **Secondary Gold** (`#e8b923`) - Premium, traditional
-- **Ledger Paper** - Traditional accounting book feel
-- **Touch-Optimized** - 44px minimum touch targets
-- **Semantic Tokens** - All colors defined in design system
-
-## 📊 Usage Guide
-
-### Adding Transactions
-
-#### Method 1: Pen Input (Recommended)
-1. Click "Pen Input" button
-2. Write transaction details on the canvas (e.g., "Sale 1000 2025-09-30")
-3. Click "Recognize" to convert handwriting
-4. Review and save the entry
-
-#### Method 2: Form Entry
-1. Go to "Ledger" tab
-2. Click "New Entry"
-3. Fill in date, description, amount, type, and GST rate
-4. Preview the GST calculation
-5. Click "Save Entry"
-
-### Viewing Reports
-1. Navigate to "Reports" tab
-2. Export professional PDF reports:
-   - **P&L Statement** - Income vs. expenses with net profit/loss
-   - **GST Report** - Collected vs. paid with net liability for filing
-   - **Ledger Summary** - Complete transaction history
-3. Export to CSV for Tally/Excel import
-
-### UPI Integration (Demo Mode)
-1. Go to "UPI" tab
-2. Enter UPI ID and amount
-3. Click "Reconcile Transaction" to match with ledger
-
-### WhatsApp Billing
-1. Navigate to "WhatsApp" tab
-2. Select bill type (Invoice/Receipt)
-3. Enter amount and customer 10-digit phone number
-4. Click "Share via WhatsApp" to generate PDF and share
-
-### Credit Management
-1. Go to "Credit" tab
-2. Enter customer name and credit amount
-3. Request customer OTP for consent
-4. Verify OTP and record credit sale
-5. Track pending payments and mark as paid
-
-### Language Switching
-1. Click language selector in header (Globe icon)
-2. Choose English or हिन्दी (Hindi)
-3. All UI labels update instantly
-
-### Managing Ledger
-1. Go to "Ledger" tab
-2. View all transactions in chronological order
-3. Filter by transaction type (colored badges)
-4. Edit or delete entries as needed
-
-## 🔒 Security Features
-
-- **Local Storage** - All data stored in encrypted IndexedDB
-- **PIN Authentication** - SHA-256 hashed PINs
-- **Role-Based Access** - Owner, Accountant, Employee roles
-- **Session Management** - Secure session storage
-- **No Cloud Dependency** - Data never leaves your device
-
-## 🛠️ Technical Stack
-
-- **Frontend:** React 18 + TypeScript
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS with custom design system
-- **UI Components:** shadcn/ui (customized)
-- **Database:** Dexie.js (IndexedDB wrapper) with Web Crypto encryption
-- **OCR:** TensorFlow.js (model loading required for production)
-- **PDF Generation:** jsPDF for reports and invoices
-- **File Export:** FileSaver for CSV downloads
-- **Internationalization:** i18next + react-i18next
-- **Icons:** Lucide React
-- **PWA:** Service Workers + Web Manifest
-
-## 📋 System Requirements
-
-### Minimum Hardware
-- **CPU:** Dual-core processor
-- **RAM:** 1GB available
-- **Storage:** 100MB free space
-- **Screen:** 7" display (1024x600)
-
-### Recommended Hardware
-- **CPU:** Quad-core processor
-- **RAM:** 2GB available
-- **Storage:** 500MB free space
-- **Screen:** 10" tablet (1920x1200)
-- **Input:** Stylus/pen support
-
-### Browser Support
-- Chrome/Edge 90+
-- Safari 14+
-- Firefox 88+
-
-## 🌐 Deployment
-
-### Deploy to Production
+### Production Build
 
 ```bash
 # Build optimized production bundle
@@ -337,106 +454,277 @@ npm run build
 # Test production build locally
 npm run preview
 
-# Deploy to your hosting provider
-# (Upload contents of 'dist' folder)
+# Build output is in 'dist/' directory
 ```
 
-### Hosting Options
-- **Lovable Cloud** - One-click deployment
-- **Netlify** - Drag & drop deployment
-- **Vercel** - Git-based deployment
-- **GitHub Pages** - Free hosting for public repos
+### Deployment Options
 
-## 📖 GST Compliance
+#### Option 1: Static Hosting (Frontend Only)
 
-MUNEEM implements official Indian GST tax slabs:
-- **0%** - Essential goods (grains, dairy, healthcare)
-- **5%** - Household necessities (sugar, tea, edible oils)
-- **12%** - Processed foods, business services
-- **18%** - Most goods and services (standard rate)
-- **28%** - Luxury goods (cars, tobacco, premium items)
+**Recommended for:** Local mode usage
 
-### GST Features
-- Automatic tax calculation on all transactions
-- GST-compliant PDF invoice generation
-- Separate tracking of Output Tax (collected) vs. Input Tax Credit (paid)
-- Net GST liability calculation for portal filing
-- Export GST reports to PDF for GSTIN filing
-- GSTIN integration (coming in future updates)
+- **Netlify:** Drag & drop `dist/` folder
+- **Vercel:** Connect GitHub repository
+- **GitHub Pages:** Deploy from `dist/` folder
+- **AWS S3 + CloudFront:** Static website hosting
 
-## 🧪 Testing
+#### Option 2: Full Stack Deployment
+
+**Recommended for:** API mode with backend
+
+- **Railway:** One-click deployment
+- **Render:** Full-stack hosting
+- **DigitalOcean App Platform:** Managed hosting
+- **AWS Elastic Beanstalk:** Scalable deployment
+- **Docker:** Containerized deployment
+
+### Docker Deployment
 
 ```bash
-# Run tests (when available)
-npm test
+# Build Docker image
+docker build -t muneem:latest .
 
-# Type checking
-npm run type-check
-
-# Linting
-npm run lint
+# Run container
+docker run -p 5173:5173 -p 8000:8000 muneem:latest
 ```
 
-## 🤝 Target Audience
-
-### Personas (from Product Brief)
-
-**Ramesh Kumar** (42, Retail Owner)
-- Needs: Simple pen input, GST compliance
-- Pain: Desktop software costs and complexity
-- Solution: MUNEEM's tablet + pen interface
-
-**Priya Sharma** (30, Freelance Consultant)
-- Needs: Portable accounting tool
-- Pain: Limited mobile app features
-- Solution: MUNEEM's professional PWA
-
-**Amit Patel** (38, Manufacturing SME)
-- Needs: Secure, scalable GST/UPI integration
-- Pain: Data security and hardware costs
-- Solution: MUNEEM's offline-first approach
-
-## 📄 License
-
-© 2025 MUNEEM Accounting Solutions LLP. All rights reserved.
-
-## 🗺️ Roadmap
-
-### Completed (MVP)
-- ✅ PIN authentication with role management
-- ✅ Canvas pen input with OCR stub
-- ✅ Digital ledger with CRUD operations
-- ✅ GST calculator (0%, 5%, 12%, 18%, 28%)
-- ✅ Dashboard analytics (P&L, GST, insights)
-- ✅ Offline IndexedDB storage with encryption
-- ✅ PWA installable on all platforms
-- ✅ TensorFlow.js OCR integration (model loading required)
-- ✅ PDF exports (P&L, GST reports, ledger)
-- ✅ CSV export for Tally/Excel
-- ✅ UPI/WhatsApp/Credit management (demo stubs)
-- ✅ English and Hindi localization
-
-### Next Steps
-- [ ] Load TensorFlow.js handwriting recognition model (MNIST/IAM)
-- [ ] Optimize for low-spec tablets (<2GB RAM, quad-core CPU)
-- [ ] Real UPI API integration (PhonePe/GooglePay sandbox)
-- [ ] WhatsApp Business API for automated billing
-- [ ] Service Worker for advanced offline caching
-- [ ] Cloud sync for multi-device (optional Lovable Cloud)
-- [ ] Advanced reports (Balance Sheet, Cash Flow Statement)
-- [ ] GSTIN management and e-filing portal integration
-- [ ] Video tutorials and in-app help documentation
-- [ ] Regional languages (Tamil, Telugu, Marathi, Bengali)
-
-## 🆘 Support
-
-For issues or questions:
-- Email: support@digbahi.in
-- Documentation: [https://docs.digbahi.in](https://docs.digbahi.in)
-- Community: [https://community.digbahi.in](https://community.digbahi.in)
+> 📖 **See:** [SETUP_GUIDE.md](./SETUP_GUIDE.md) for detailed deployment instructions.
 
 ---
 
-**Built with ❤️ for Indian SMEs**
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Issue: Port Already in Use
+
+```bash
+# Find process using port
+lsof -ti:5173  # Frontend
+lsof -ti:8000  # Backend
+lsof -ti:9000  # PaddleOCR
+
+# Kill process
+kill -9 <PID>
+```
+
+#### Issue: Dependencies Not Installing
+
+```bash
+# Clear npm cache
+npm cache clean --force
+
+# Remove node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+```
+
+#### Issue: Backend Not Starting
+
+```bash
+# Check Python version
+python3 --version  # Should be 3.8+
+
+# Recreate virtual environment
+cd backend
+rm -rf venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+#### Issue: WhatsApp Features Not Working
+
+1. Verify `.env` file exists in `backend/` directory
+2. Check WhatsApp API credentials are correct
+3. Ensure message template is created in Meta Business Manager
+4. Verify phone numbers are in allowed list
+5. Check access token is not expired
+
+#### Issue: Build Fails
+
+```bash
+# Clear build cache
+rm -rf dist node_modules/.vite
+
+# Rebuild
+npm run build
+```
+
+### Getting Help
+
+- 📖 Check [SETUP_GUIDE.md](./SETUP_GUIDE.md) for detailed setup instructions
+- 💬 Check [WHATSAPP_INTEGRATION.md](./WHATSAPP_INTEGRATION.md) for WhatsApp setup
+- 🐛 Open an issue on GitHub
+- 📧 Contact support: support@muneem.in
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. **Fork the repository**
+2. **Create a feature branch:**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes**
+4. **Commit with clear messages:**
+   ```bash
+   git commit -m "Add: Description of changes"
+   ```
+5. **Push to your fork:**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+6. **Open a Pull Request**
+
+### Contribution Guidelines
+
+- Follow existing code style and conventions
+- Write clear commit messages
+- Add tests for new features
+- Update documentation as needed
+- Ensure all tests pass before submitting
+
+---
+
+## 📊 System Requirements
+
+### Minimum Requirements
+
+- **CPU:** Dual-core processor
+- **RAM:** 1GB available
+- **Storage:** 100MB free space
+- **Screen:** 7" display (1024x600)
+- **Browser:** Chrome 90+, Safari 14+, Firefox 88+
+
+### Recommended Requirements
+
+- **CPU:** Quad-core processor
+- **RAM:** 2GB available
+- **Storage:** 500MB free space
+- **Screen:** 10" tablet (1920x1200)
+- **Input:** Stylus/pen support
+- **Browser:** Latest Chrome/Edge/Safari
+
+---
+
+## 🇮🇳 GST Compliance
+
+MUNEEM implements official Indian GST tax slabs:
+
+| Rate | Category | Examples |
+|------|----------|----------|
+| **0%** | Essential goods | Grains, dairy, healthcare |
+| **5%** | Household necessities | Sugar, tea, edible oils |
+| **12%** | Processed foods | Business services |
+| **18%** | Standard rate | Most goods and services |
+| **28%** | Luxury goods | Cars, tobacco, premium items |
+
+### GST Features
+
+- ✅ Automatic tax calculation on all transactions
+- ✅ GST-compliant PDF invoice generation
+- ✅ Separate tracking of Output Tax vs. Input Tax Credit
+- ✅ Net GST liability calculation for portal filing
+- ✅ Export GST reports to PDF for GSTIN filing
+- 🔜 GSTIN integration (coming soon)
+
+---
+
+## 📱 Installing as PWA
+
+### Android Tablet/Phone
+
+1. Open app in Chrome browser
+2. Tap menu (⋮) → **"Add to Home Screen"**
+3. App installs like native app
+4. Launch from home screen for fullscreen experience
+
+### iOS/iPad
+
+1. Open app in Safari
+2. Tap Share button
+3. Select **"Add to Home Screen"**
+4. App installs as web app
+
+### Desktop (Chrome/Edge)
+
+1. Click install icon (⊕) in address bar
+2. Or go to Settings → **Install MUNEEM**
+3. App opens as standalone window
+
+---
+
+## 🗺️ Roadmap
+
+### ✅ Completed (MVP)
+
+- [x] PIN authentication with role management
+- [x] Canvas pen input with OCR support
+- [x] Digital ledger with CRUD operations
+- [x] GST calculator (0%, 5%, 12%, 18%, 28%)
+- [x] Dashboard analytics (P&L, GST, insights)
+- [x] Offline IndexedDB storage with encryption
+- [x] PWA installable on all platforms
+- [x] PDF exports (P&L, GST reports, ledger)
+- [x] CSV export for Tally/Excel
+- [x] WhatsApp Business API integration
+- [x] Credit management with OTP
+- [x] English and Hindi localization
+
+### 🔜 Coming Soon
+
+- [ ] Advanced OCR model optimization
+- [ ] Real UPI API integration (PhonePe/GooglePay)
+- [ ] Cloud sync for multi-device (optional)
+- [ ] Advanced reports (Balance Sheet, Cash Flow)
+- [ ] GSTIN management and e-filing portal integration
+- [ ] Video tutorials and in-app help
+- [ ] Regional languages (Tamil, Telugu, Marathi, Bengali)
+- [ ] Mobile app (React Native)
+
+---
+
+## 🆘 Support
+
+### Documentation
+
+- 📖 [Setup Guide](./SETUP_GUIDE.md) - Detailed setup instructions
+- 📖 [WhatsApp Integration](./WHATSAPP_INTEGRATION.md) - WhatsApp API setup
+- 📖 [Architecture](./ARCHITECTURE.md) - Technical architecture
+
+### Contact
+
+- 📧 **Email:** support@muneem.in
+- 🌐 **Website:** [https://muneem.in](https://muneem.in)
+- 💬 **Community:** [https://community.muneem.in](https://community.muneem.in)
+- 🐛 **Issues:** [GitHub Issues](https://github.com/soni-pvt-ltd/DigBahi/issues)
+
+---
+
+## 📄 License
+
+© 2025 MUNEEM Accounting Solutions. All rights reserved.
+
+This software is proprietary and confidential. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
+
+---
+
+## 🙏 Acknowledgments
+
+Built with ❤️ for Indian SMEs
 
 *Empowering businesses with affordable, professional accounting.*
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#muneem)**
+
+Made with ❤️ by MUNEEM Accounting Solutions
+
+</div>
