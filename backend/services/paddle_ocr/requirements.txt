@@ -1,7 +1,14 @@
+# PaddleOCR Service - Python Dependencies
+# Last updated: 2025-01-21
+# Note: These packages are large and installation may take 5-10 minutes
+
+# OCR Engine
 paddlepaddle==2.6.2
 paddleocr==2.7.0.3
+
+# Web Framework
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
+
+# Image Processing
 Pillow==10.2.0
-
-

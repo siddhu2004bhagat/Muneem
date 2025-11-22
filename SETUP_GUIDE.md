@@ -27,6 +27,31 @@ npm --version
 
 ## Step-by-Step Setup
 
+### Option 1: One-Click Installation (Recommended)
+
+```bash
+# Clone repository
+git clone https://github.com/soni-pvt-ltd/DigBahi.git
+cd DigBahi
+
+# Run one-click install script
+./install.sh
+# OR
+npm run install:all
+```
+
+**What it does:**
+- ✅ Checks prerequisites (Node.js, Python)
+- ✅ Installs frontend dependencies (npm)
+- ✅ Sets up backend virtual environment and dependencies
+- ✅ Optionally installs PaddleOCR (you'll be prompted)
+
+**Expected time:** 10-15 minutes (first time)
+
+---
+
+### Option 2: Manual Installation
+
 ### 1. Clone Repository
 
 ```bash

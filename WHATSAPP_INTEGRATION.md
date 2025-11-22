@@ -129,11 +129,57 @@ For testing, add phone numbers to allowed list:
 
 ---
 
-## Documentation
+## Template Setup (Required)
 
-- **Template Setup**: See `WHATSAPP_TEMPLATE_SETUP.md` for detailed template creation guide
-- **API Guide**: See `WHATSAPP_API_INTEGRATION_GUIDE.md` for API details
-- **Validation**: See validation reports for comprehensive testing results
+### Create WhatsApp Template
+
+The WhatsApp template `digbahi_otp` **must exist** in your WhatsApp Business Account.
+
+**Error Code**: 132001 - "Template name does not exist in the translation"
+
+### Step-by-Step Template Creation
+
+1. **Go to WhatsApp Manager**
+   - Open: https://business.facebook.com/wa/manage/message-templates/
+   - Make sure you're logged into the Meta Business account that has your WhatsApp Business API
+
+2. **Create New Template**
+   - Click **"Create Template"** button
+   - Select **"Start from scratch"**
+
+3. **Template Details**
+   - **Name**: `digbahi_otp` (must be exactly this, lowercase)
+   - **Category**: Select **"OTP"**
+   - **Language**: Select **"English (US)"** or **"English (India)"**
+
+4. **Template Content**
+   - **Body Text:**
+     ```
+     Your DigBahi OTP is {{1}}. This OTP is valid for 10 minutes.
+     ```
+   - **Important:** Add parameter `{{1}}` where the OTP code will appear
+   - This is a single parameter for the 6-digit OTP
+
+5. **Submit for Approval**
+   - Click **"Submit"**
+   - Wait for approval (usually 5-10 minutes, can take up to 24 hours)
+
+6. **Verify Template**
+   - Once approved, go back to templates page
+   - Search for `digbahi_otp`
+   - Status should show: **"Approved"**
+
+### After Template is Created
+
+Once the template is approved:
+- The application will automatically use it
+- OTPs will be sent directly to WhatsApp (no manual copy/paste needed)
+- Users will receive OTPs instantly
+
+### Troubleshooting Template Issues
+
+- **Template Not Showing Up**: Make sure you're in the correct WhatsApp Business Account
+- **Still Getting Errors**: Check template name matches exactly (case-sensitive), verify language code matches (en_US or en_IN), ensure template has parameter `{{1}}` in body
 
 ---
 

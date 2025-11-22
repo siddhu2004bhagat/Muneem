@@ -33,7 +33,30 @@
 - **Username:** `demo`
 - **PIN:** `1234`
 
-### Setup Instructions
+### Quick Setup (One-Click Installation)
+
+```bash
+# Clone repository
+git clone https://github.com/soni-pvt-ltd/DigBahi.git
+cd DigBahi
+
+# One-click install all dependencies
+./install.sh
+# OR
+npm run install:all
+```
+
+**What it does:**
+- ✅ Installs frontend dependencies (npm)
+- ✅ Sets up backend virtual environment and dependencies
+- ✅ Optionally installs PaddleOCR (you'll be prompted)
+
+**Expected time:** 10-15 minutes (first time)
+
+### Manual Setup (Alternative)
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
 
 #### 1. Clone the Repository
 ```bash
@@ -76,7 +99,10 @@ cp .env.example .env
 cd ..
 ```
 
-#### 6. Start the Application
+</details>
+
+### Start the Application
+
 ```bash
 # Single command to start everything
 npm start
@@ -89,7 +115,8 @@ npm start
 # - PaddleOCR on http://localhost:9000
 ```
 
-#### 7. Stop the Application
+### Stop the Application
+
 ```bash
 npm stop
 # OR
