@@ -1,5 +1,5 @@
 /**
- * Consent Management for DigBahi
+ * Consent Management for MUNEEM
  * 
  * Handles user consent for telemetry, federated learning, and analytics.
  * Stores consent state in localStorage and logs to audit trail.
