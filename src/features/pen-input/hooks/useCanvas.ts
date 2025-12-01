@@ -8,6 +8,7 @@ import { usePenTool } from '../context/PenToolContext';
 import { getPaperTemplate } from '../templates/paper-templates';
 import { LedgerFormatId } from '@/features/ledger-formats';
 import { createPencilPattern } from '../services/texture.service';
+import { CanvasService } from '@/services/canvas.service';
 
 const DPR = () => window.devicePixelRatio || 1;
 
@@ -26,6 +27,10 @@ export function useCanvas() {
 
   // Cache for pencil patterns to avoid recreating every frame
   const patternCacheRef = useRef<Map<string, CanvasPattern>>(new Map());
+
+  // Real-time smoothing buffer for incremental drawing
+  const smoothingBufferRef = useRef<StrokePoint[]>([]);
+  const rafIdRef = useRef<number | null>(null);
 
   const [config, setConfig] = useState<CanvasConfig>({
     width: 1024,
@@ -128,46 +133,62 @@ export function useCanvas() {
       ctx.beginPath();
       ctx.moveTo(s.points[0].x, s.points[0].y);
 
-      // For Pen, we want variable width. 
-      // Since quadraticCurveTo draws a continuous line, we can't easily change width mid-stroke 
-      // without breaking it into segments. 
-      // Breaking into segments (moveTo -> quadraticCurveTo -> stroke -> beginPath -> moveTo) 
-      // is expensive but necessary for variable width in Canvas 2D without using polygons.
+      // Improved smooth curve rendering with proper Bezier control points
+      if (s.points.length < 2) return;
 
       if (s.tool === 'pen') {
-        // Variable width rendering for Pen
+        // Variable width rendering for Pen with smooth curves
+        ctx.beginPath();
+        ctx.moveTo(s.points[0].x, s.points[0].y);
+        
         for (let i = 1; i < s.points.length; i++) {
-          const p = s.points[i - 1];
-          const q = s.points[i];
+          const p0 = s.points[i - 1];
+          const p1 = s.points[i];
+          const p2 = i < s.points.length - 1 ? s.points[i + 1] : undefined;
 
-          // Reconstruct velocity
-          const dist = Math.sqrt(Math.pow(q.x - p.x, 2) + Math.pow(q.y - p.y, 2));
-          const time = q.timestamp - p.timestamp;
-          const v = time > 0 ? dist / time : 0;
-
-          // Calculate width - simplified for smoother feel
+          // Calculate smooth control point
+          const control = CanvasService.getBezierControlPoint(p0, p1, p2);
+          
+          // Calculate width based on pressure
           const baseWidth = s.width;
-          const pressure = q.pressure || 0.5;
-          // Pressure range: 0.7x to 1.3x (tighter bounds, no velocity)
+          const pressure = p1.pressure || 0.5;
           const pressureFactor = 0.7 + (pressure * 0.6);
           const segmentWidth = baseWidth * pressureFactor;
 
           ctx.lineWidth = segmentWidth;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          const midX = (p.x + q.x) / 2, midY = (p.y + q.y) / 2;
-          ctx.quadraticCurveTo(p.x, p.y, midX, midY);
-          ctx.stroke();
+          
+          // Use quadratic curve with proper control point for smoothness
+          const midX = (p0.x + p1.x) / 2;
+          const midY = (p0.y + p1.y) / 2;
+          ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+          
+          // Draw segment if we have next point, otherwise draw to end
+          if (i === s.points.length - 1) {
+            ctx.lineTo(p1.x, p1.y);
+          }
         }
+        ctx.stroke();
       } else {
-        // Constant width for others (Pencil/Highlighter/Eraser)
-        // Optimization: Draw as single path
+        // Constant width for others (Pencil/Highlighter/Eraser) with smooth curves
         ctx.beginPath();
         ctx.moveTo(s.points[0].x, s.points[0].y);
+        
         for (let i = 1; i < s.points.length; i++) {
-          const p = s.points[i - 1]; const q = s.points[i];
-          const midX = (p.x + q.x) / 2, midY = (p.y + q.y) / 2;
-          ctx.quadraticCurveTo(p.x, p.y, midX, midY);
+          const p0 = s.points[i - 1];
+          const p1 = s.points[i];
+          const p2 = i < s.points.length - 1 ? s.points[i + 1] : undefined;
+          
+          // Calculate smooth control point
+          const control = CanvasService.getBezierControlPoint(p0, p1, p2);
+          const midX = (p0.x + p1.x) / 2;
+          const midY = (p0.y + p1.y) / 2;
+          
+          ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+          
+          // Draw to final point
+          if (i === s.points.length - 1) {
+            ctx.lineTo(p1.x, p1.y);
+          }
         }
         ctx.stroke();
       }
@@ -211,33 +232,46 @@ export function useCanvas() {
     const stroke = currentStrokeRef.current; if (!stroke) return;
     const last = lastPointRef.current || stroke.points[stroke.points.length - 1];
 
-    // Calculate variable width based on pressure and velocity
-    const v = StrokeEngine.velocityBetween(last, p);
-    const pressure = p.pressure;
-
-    // Base width logic
-    let newWidth = width;
-    if (tool === 'pen') {
-      // Pen: Simplified pressure sensitivity (0.7x to 1.3x)
-      // No velocity variation for smoother feel
-      const pressureFactor = 0.7 + (pressure * 0.6);
-      newWidth = width * pressureFactor;
-    } else if (tool === 'pencil') {
-      // Pencil: Constant width, texture provides variation
-      newWidth = width * 0.8;
+    // Interpolate points for fast movements (predictive drawing)
+    const interpolated = CanvasService.interpolatePoints(last, p, 5);
+    
+    // Apply real-time smoothing to each interpolated point
+    const smoothedPoints: StrokePoint[] = [];
+    for (const point of interpolated) {
+      const smoothed = CanvasService.smoothPointIncremental(
+        point,
+        smoothingBufferRef.current,
+        4 // Buffer size for smoothing
+      );
+      smoothedPoints.push(smoothed);
+      smoothingBufferRef.current.push(smoothed);
+      
+      // Keep buffer size manageable
+      if (smoothingBufferRef.current.length > 5) {
+        smoothingBufferRef.current.shift();
+      }
     }
 
-    // Smooth width transition
-    // stroke.width is the "base" width, but we want per-segment width.
-    // Since we are drawing incrementally, we can change ctx.lineWidth!
+    // Add all smoothed points to stroke
+    for (const smoothedPoint of smoothedPoints) {
+      stroke.points.push(smoothedPoint);
+    }
+    lastPointRef.current = smoothedPoints[smoothedPoints.length - 1] || p;
 
-    stroke.points.push(p);
-    lastPointRef.current = p;
+    // Use requestAnimationFrame for smoother rendering
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+    }
 
-    // Draw incremental segment
-    const c = canvasRef.current; const ctx = c?.getContext('2d');
-    if (ctx && stroke.points.length > 1) {
-      const q = stroke.points[stroke.points.length - 2];
+    rafIdRef.current = requestAnimationFrame(() => {
+      const c = canvasRef.current; const ctx = c?.getContext('2d');
+      if (!ctx || stroke.points.length < 2) return;
+
+      const lastDrawnIndex = (stroke as any).lastDrawnIndex || 0;
+      const pointsToDraw = stroke.points.slice(lastDrawnIndex);
+      
+      if (pointsToDraw.length < 2) return;
+
       ctx.save();
 
       // iPad-like Physics & Rendering
@@ -256,41 +290,86 @@ export function useCanvas() {
         const pattern = getPattern(ctx, stroke.color, 0.9);
         ctx.strokeStyle = pattern || stroke.color;
         ctx.globalAlpha = 1;
-        ctx.lineWidth = Math.max(0.8, stroke.width * 0.9); // Slightly thicker for visibility
+        ctx.lineWidth = Math.max(0.8, stroke.width * 0.9);
         ctx.lineCap = 'round';
-        // No shadow - keep it crisp
       } else {
-        // Default Pen (Variable Width) - crisp and natural
+        // Default Pen (Variable Width) - smooth and natural
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = stroke.opacity;
         ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = newWidth; // Use calculated variable width
+        ctx.lineWidth = stroke.width;
         ctx.lineCap = 'round';
-        // No shadow - keep lines crisp
       }
 
       if (stroke.tool !== 'highlighter') {
-        ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
       } else {
-        ctx.lineCap = 'butt'; ctx.lineJoin = 'round';
+        ctx.lineCap = 'butt';
+        ctx.lineJoin = 'round';
       }
 
+      // Draw smooth curve using improved Bezier control points
       ctx.beginPath();
-      const midX = (q.x + p.x) / 2, midY = (q.y + p.y) / 2;
-      ctx.moveTo(q.x, q.y);
-      ctx.quadraticCurveTo(q.x, q.y, midX, midY);
+      const startPoint = lastDrawnIndex > 0 ? stroke.points[lastDrawnIndex - 1] : pointsToDraw[0];
+      ctx.moveTo(startPoint.x, startPoint.y);
+
+      for (let i = 1; i < pointsToDraw.length; i++) {
+        const p0 = i === 1 && lastDrawnIndex > 0 
+          ? stroke.points[lastDrawnIndex - 1] 
+          : pointsToDraw[i - 1];
+        const p1 = pointsToDraw[i];
+        const p2 = i < pointsToDraw.length - 1 ? pointsToDraw[i + 1] : undefined;
+
+        // Calculate smooth control point
+        const control = CanvasService.getBezierControlPoint(p0, p1, p2);
+        const midX = (p0.x + p1.x) / 2;
+        const midY = (p0.y + p1.y) / 2;
+
+        // Adjust line width for pen tool based on pressure
+        if (stroke.tool === 'pen') {
+          const pressure = p1.pressure || 0.5;
+          const pressureFactor = 0.7 + (pressure * 0.6);
+          ctx.lineWidth = stroke.width * pressureFactor;
+        }
+
+        ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+        
+        if (i === pointsToDraw.length - 1) {
+          ctx.lineTo(p1.x, p1.y);
+        }
+      }
+
       ctx.stroke();
       ctx.restore();
-    }
-  }, [width, tool]);
+      
+      (stroke as any).lastDrawnIndex = stroke.points.length;
+      rafIdRef.current = null;
+    });
+  }, [width, tool, getPattern]);
 
   const endStroke = useCallback(() => {
+    // Cancel any pending animation frame
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+
     const stroke = currentStrokeRef.current; if (!stroke) return;
     currentStrokeRef.current = null; lastPointRef.current = null;
-    // Smooth and persist via command
+    
+    // Final smoothing pass for the complete stroke
     const smoothed = { ...stroke, points: StrokeEngine.smooth(stroke.points) };
+    
+    // Clear smoothing buffer
+    smoothingBufferRef.current = [];
+    
+    // Redraw the entire smoothed stroke
+    redrawAll();
+    
+    // Persist via command
     historyRef.current.push(addStrokeCommand(smoothed));
-  }, [addStrokeCommand]);
+  }, [addStrokeCommand, redrawAll]);
 
   const clearCanvas = useCallback(() => {
     historyRef.current.push(clearCommand());
