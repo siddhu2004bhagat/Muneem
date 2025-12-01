@@ -85,7 +85,28 @@
 
 ### Prerequisites
 
-Before you begin, ensure you have the following installed:
+- Node.js (v18+)
+- Python (v3.8+)
+- **Tesseract OCR** (Required for Pen Input)
+
+### Installation
+
+#### 1. Install System Dependencies
+
+**macOS:**
+```bash
+brew install tesseract
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt-get update
+sudo apt-get install tesseract-ocr libtesseract-dev libleptonica-dev pkg-config
+sudo apt-get install python3-dev python3-venv  # Required for backend
+sudo apt-get install libgl1  # Required for OpenCV
+```
+
+#### 2. Install Application
 
 - **Node.js** 18+ ([Download](https://nodejs.org/))
 - **Python** 3.8+ ([Download](https://www.python.org/))
@@ -605,6 +626,26 @@ We welcome contributions! Please follow these steps:
 - **CPU:** Quad-core processor
 - **RAM:** 2GB available
 - **Storage:** 500MB free space
+
+### Raspberry Pi 4/5 Deployment
+
+For Linux tablet deployment (Raspberry Pi 4/5 with 7" touchscreen):
+
+```bash
+# 1. System setup
+./scripts/pi-setup.sh
+
+# 2. Install application
+./install.sh
+
+# 3. Start services
+./start.sh
+
+# 4. Kiosk mode (fullscreen)
+./scripts/start-kiosk.sh
+```
+
+**Note:** OCR automatically routes to backend (native Tesseract) on Linux tablets for better performance.
 - **Screen:** 10" tablet (1920x1200)
 - **Input:** Stylus/pen support
 - **Browser:** Latest Chrome/Edge/Safari

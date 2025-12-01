@@ -1,9 +1,11 @@
+import { getWebSocketUrl } from '@/lib/api-config';
+
 let socket: WebSocket | null = null;
 const listeners: Array<(msg: any) => void> = [];
 
 export function connectWS() {
   try {
-    socket = new WebSocket(`ws://localhost:8000/api/v1/sync/ws`);
+    socket = new WebSocket(getWebSocketUrl());
     socket.onmessage = (ev) => {
       try { const data = JSON.parse(ev.data); listeners.forEach(l => l(data)); } catch {}
     };

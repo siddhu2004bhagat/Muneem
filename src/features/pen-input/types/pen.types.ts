@@ -40,11 +40,13 @@ export interface ShapeDetection {
 }
 
 export interface Stroke {
+  id: string;
   points: Array<{ x: number; y: number; pressure: number; timestamp: number }>;
   color: string;
   width: number;
   opacity: number;
-  tool: 'pen' | 'pencil' | 'highlighter' | 'eraser';
+  tool: DrawingTool;
+  timestamp: number;
 }
 
 export interface CanvasConfig {

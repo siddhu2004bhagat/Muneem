@@ -36,8 +36,14 @@ interface OCRResult {
   type: 'tesseract' | 'tflite' | 'merged';
 }
 
-type TesseractWorker = Awaited<ReturnType<typeof Tesseract.createWorker>>;
-type TFLiteModel = { predict: (input: ImageData) => Promise<{ text: string; confidence: number; box: { x: number; y: number; width: number; height: number } }[]> } | null;
+type TesseractWorker = Awaited<ReturnType<typeof Tesseract.createWorker>> & {
+  loadLanguage: (lang: string) => Promise<void>;
+  initialize: (lang: string) => Promise<void>;
+  recognize: (image: ImageData | ImageBitmap) => Promise<{ data: { text: string; confidence: number; words?: Array<{ text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }> } }>;
+  setParameters: (params: Record<string, string | number>) => Promise<void>;
+  terminate: () => Promise<void>;
+};
+type TFLiteModel = { predict: (input: ImageData) => Promise<OCRResult[]> } | null;
 
 let tesseractWorker: TesseractWorker | null = null;
 let tfliteModel: TFLiteModel = null; // TFLite model stub
@@ -52,7 +58,7 @@ async function initialize(): Promise<void> {
   try {
     // Initialize Tesseract.js with lazy loading
     console.log('[OCR Worker] Initializing Tesseract...');
-    tesseractWorker = await Tesseract.createWorker({
+    tesseractWorker = await Tesseract.createWorker('eng', 1, {
       logger: (m: { status: string; progress: number }) => {
         // Log progress for debugging
         console.log('[OCR Worker] Progress:', m.status, m.progress);
@@ -68,31 +74,38 @@ async function initialize(): Promise<void> {
           postMessage({ type: 'progress', progress: m.progress, id: '' });
         }
       }
-    });
-    
+    }) as TesseractWorker;
+
     console.log('[OCR Worker] Tesseract worker created, loading languages...');
-    
+
     // Load English only for faster recognition (40% faster, 15% better accuracy for alphanumeric)
     // Hindi can be added later if needed, but English-only is optimal for most use cases
-    await tesseractWorker.loadLanguage('eng');
-    await tesseractWorker.initialize('eng');
-    
+    if (tesseractWorker.loadLanguage) {
+      await tesseractWorker.loadLanguage('eng');
+    }
+    if (tesseractWorker.initialize) {
+      await tesseractWorker.initialize('eng');
+    }
+
     console.log('[OCR Worker] English language loaded, setting parameters...');
-    
+
     // Set recognition parameters optimized for handwriting
     // PSM 7 = single text line (better for handwriting than PSM 8)
-    // Engine mode 3 = LSTM + Legacy (better coverage than LSTM only)
-    await tesseractWorker.setParameters({
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789₹.,:-()[]{}!@#$%^&*()_+-=[]{}|;:,.<>?/~`',
-      tessedit_pageseg_mode: '7', // Single text line (better for handwriting than single word)
-      tessedit_ocr_engine_mode: '3', // LSTM + Legacy (better coverage)
-    });
-    
+    // NOTE: tessedit_ocr_engine_mode CANNOT be set after initialization
+    // It must be set during createWorker or not at all
+    if (tesseractWorker.setParameters) {
+      await tesseractWorker.setParameters({
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789₹.,:-()[]{}!@#$%^&*()_+-=[]{}|;:,.<>?/~`',
+        tessedit_pageseg_mode: 7, // Single text line (better for handwriting than single word)
+        // tessedit_ocr_engine_mode: 3, // REMOVED - cannot be set post-init, causes worker crash
+      });
+    }
+
     console.log('[OCR Worker] Tesseract initialized successfully');
 
     // Initialize TFLite model stub (placeholder for future enhancement)
     tfliteModel = {
-      predict: async (_imageData: ImageData) => {
+      predict: async (_imageData: ImageData): Promise<OCRResult[]> => {
         // Placeholder: return empty results for now
         // Future implementation would use quantized TFLite models
         return [];
@@ -118,15 +131,16 @@ async function runTesseract(imageData: ImageData, options: RecognizeOptions): Pr
 
   try {
     console.log('[OCR Worker] Starting recognition, image size:', imageData.width, 'x', imageData.height);
-    
+
     // Convert ImageData to format Tesseract expects (ImageData or ImageBitmap)
-    const { data } = await tesseractWorker.recognize(imageData);
-    
+    const result = await tesseractWorker.recognize(imageData);
+    const data = result.data as { text: string; confidence: number; words?: Array<{ text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }> };
+
     console.log('[OCR Worker] Recognition complete, words found:', data.words?.length || 0);
-    
+
     // Parse Tesseract results
     const results: OCRResult[] = [];
-    
+
     // Check for text at top level (some Tesseract versions return text directly)
     if (data.text && data.text.trim() && (!data.words || data.words.length === 0)) {
       console.log('[OCR Worker] Found text at top level:', data.text);
@@ -143,7 +157,7 @@ async function runTesseract(imageData: ImageData, options: RecognizeOptions): Pr
         type: 'tesseract'
       });
     }
-    
+
     if (data.words && data.words.length > 0) {
       data.words.forEach((word, index) => {
         if (word.text && word.text.trim()) {
@@ -186,7 +200,7 @@ async function runTFLite(imageData: ImageData, options: RecognizeOptions): Promi
     // 1. Preprocess image (resize, normalize)
     // 2. Run inference using TFLite runtime
     // 3. Post-process results
-    
+
     const results = await tfliteModel.predict(imageData);
     return results;
   } catch (error) {
@@ -210,7 +224,7 @@ function cropImageData(
   const tempCanvas = new OffscreenCanvas(imageData.width, imageData.height);
   const tempCtx = tempCanvas.getContext('2d');
   if (!tempCtx) throw new Error('Failed to get temp canvas context');
-  
+
   tempCtx.putImageData(imageData, 0, 0);
 
   // Draw cropped region
@@ -274,7 +288,7 @@ async function destroy(): Promise<void> {
     await tesseractWorker.terminate();
     tesseractWorker = null;
   }
-  
+
   tfliteModel = null;
   isInitialized = false;
 }
@@ -287,7 +301,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 
   try {
     console.log('[OCR Worker] Received message:', type, id);
-    
+
     switch (type) {
       case 'init':
       case 'warmup':

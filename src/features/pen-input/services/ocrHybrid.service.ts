@@ -12,11 +12,13 @@
  */
 
 import type { OCRResult } from '../ocr/worker/tesseractWorker';
+import { isLinuxTablet, getRecommendedOCRMode } from '@/lib/platform';
+import { getApiBaseUrl } from '@/lib/api-config';
 
 export type { OCRResult };
 
 interface RecognizeOptions {
-  mode?: 'auto' | 'tesseract' | 'tflite';
+  mode?: 'auto' | 'tesseract' | 'tflite' | 'backend';
   language?: string;
   rois?: Array<{ x: number; y: number; width: number; height: number }>;
 }
@@ -290,18 +292,28 @@ export default class OCRHybridService {
 
   /**
    * Recognize text from canvas
+   * CRITICAL: On Linux tablets (Raspberry Pi), always routes to backend OCR service
+   * to avoid heavy Tesseract.js WASM processing in browser
    */
   async recognizeCanvas(
     canvasEl: HTMLCanvasElement,
     options: RecognizeOptions = {}
   ): Promise<OCRResult[]> {
+    // CRITICAL FIX: Route to backend on Linux tablets (Raspberry Pi)
+    const ocrMode = options.mode || getRecommendedOCRMode();
+    
+    if (ocrMode === 'backend' || isLinuxTablet()) {
+      console.log('[OCRHybridService] Routing to backend OCR (Linux tablet detected)');
+      return this.recognizeWithBackend(canvasEl);
+    }
+
     // Get image data from canvas
     const ctx = canvasEl.getContext('2d');
     if (!ctx) throw new Error('Failed to get canvas context');
 
     const imageData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
 
-    // Send to worker
+    // Send to worker (browser-based Tesseract.js)
     const rawResults = await this.sendMessage('recognize', {
       imageData,
       options,
@@ -327,6 +339,66 @@ export default class OCRHybridService {
     const merged = mergeResults(allResults);
 
     return merged;
+  }
+
+  /**
+   * Recognize text using backend OCR service (Tesseract native)
+   * This is the preferred method for Linux tablets (Raspberry Pi)
+   */
+  private async recognizeWithBackend(canvasEl: HTMLCanvasElement): Promise<OCRResult[]> {
+    // Use OCR service on port 9000 (same host as API)
+    const apiBase = getApiBaseUrl();
+    const ocrHost = apiBase.replace(':8000', ':9000');
+    const ocrEndpoint = `${ocrHost}/recognize`;
+    
+    // Convert canvas to base64
+    const dataUrl = canvasEl.toDataURL('image/png');
+    const base64 = dataUrl.split(',')[1];
+
+    try {
+      this.onProgress?.(0.3); // Indicate processing started
+      
+      const response = await fetch(ocrEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_base64: base64 })
+      });
+
+      this.onProgress?.(0.7);
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`Backend OCR error: ${response.status} ${text}`);
+      }
+
+      const { text, confidence } = await response.json() as { text: string; confidence: number };
+
+      this.onProgress?.(1.0);
+
+      if (!text || text.trim().length === 0) {
+        return [];
+      }
+
+      // Convert backend response to OCRResult format
+      const result: OCRResult = {
+        id: `backend_ocr_${Date.now()}`,
+        text: text.trim(),
+        confidence: typeof confidence === 'number' ? confidence : 0.8,
+        box: { x: 0, y: 0, width: canvasEl.width, height: canvasEl.height },
+        type: 'merged'
+      };
+
+      console.log('[OCRHybridService] Backend OCR result:', result);
+      return [result];
+    } catch (error) {
+      console.error('[OCRHybridService] Backend OCR request failed:', error);
+      // Fallback to PaddleOCR if available
+      if (this.hasPaddleFallback()) {
+        console.log('[OCRHybridService] Falling back to PaddleOCR');
+        return this.recognizeWithPaddle(canvasEl);
+      }
+      throw error instanceof Error ? error : new Error('Backend OCR request failed');
+    }
   }
 
   /**

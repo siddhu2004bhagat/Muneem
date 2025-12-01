@@ -25,10 +25,10 @@ except ImportError as e:
 
 app = FastAPI(title="MUNEEM Local API")
 
-# Add CORS middleware
+# Add CORS middleware - Allow all origins for LAN access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8080", "http://localhost:5173", "http://192.168.29.253:3000"],
+    allow_origins=["*"],  # Allow all origins for LAN access
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

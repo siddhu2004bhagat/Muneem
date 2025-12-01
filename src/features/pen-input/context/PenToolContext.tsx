@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react';
 import type { DrawingTool } from '../types/pen.types';
 
 interface PenToolState {
@@ -19,11 +19,29 @@ const PenToolContext = createContext<PenToolState | null>(null);
 export const PenToolProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [tool, setTool] = useState<DrawingTool>('pen');
   const [color, setColor] = useState<string>('#000000');
-  const [width, setWidth] = useState<number>(3);
+  const [width, setWidth] = useState<number>(1.5); // Thinner default for natural pen feel
   const [opacity, setOpacity] = useState<number>(1);
   const [mode, setMode] = useState<'draw' | 'shape' | 'ocr'>('draw');
 
-  const value = useMemo(() => ({ tool, color, width, opacity, mode, setTool, setColor, setWidth, setOpacity, setMode }), [tool, color, width, opacity, mode]);
+  // Enhanced setTool with logging and validation
+  const handleSetTool = useCallback((newTool: DrawingTool) => {
+    console.log(`[PenToolContext] Tool changed from ${tool} to ${newTool}`);
+    setTool(newTool);
+  }, [tool]);
+
+  const value = useMemo(() => ({ 
+    tool, 
+    color, 
+    width, 
+    opacity, 
+    mode, 
+    setTool: handleSetTool, 
+    setColor, 
+    setWidth, 
+    setOpacity, 
+    setMode 
+  }), [tool, color, width, opacity, mode, handleSetTool]);
+  
   return <PenToolContext.Provider value={value}>{children}</PenToolContext.Provider>;
 };
 

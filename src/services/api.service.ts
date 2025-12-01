@@ -1,4 +1,6 @@
-const BASE = 'http://localhost:8000/api/v1';
+import { getApiUrl } from '@/lib/api-config';
+
+const BASE = getApiUrl('');
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, { headers: { 'Content-Type': 'application/json' }, ...init });

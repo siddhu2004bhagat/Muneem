@@ -9,51 +9,55 @@ export interface PaperTemplate {
   drawBackground: (ctx: CanvasRenderingContext2D, width: number, height: number) => void;
 }
 
-// Traditional Khata Book - Simple ruled lines
+// Traditional Khata Book - Realistic notebook paper
 const traditionalKhata: PaperTemplate = {
   id: 'traditional-khata',
   name: 'Traditional Khata Book',
-  backgroundColor: '#fefce8',
-  lineColor: '#d4d4a8',
+  backgroundColor: '#fdfbf7', // Slightly warmer/realistic paper color
+  lineColor: '#cbd5e1', // Slate-300 for lines
   drawBackground: (ctx, width, height) => {
     // Fill background
-    ctx.fillStyle = '#fefce8';
+    ctx.fillStyle = '#fdfbf7';
     ctx.fillRect(0, 0, width, height);
-    
-    // Draw horizontal lines (like notebook paper)
-    ctx.strokeStyle = '#d4d4a8';
+
+    // Draw horizontal lines (blue-ish like real notebook)
+    ctx.strokeStyle = '#94a3b8'; // Slate-400
     ctx.lineWidth = 1;
-    const lineSpacing = 40; // Space between lines
-    
-    for (let y = lineSpacing; y < height; y += lineSpacing) {
+    const lineSpacing = 40;
+
+    // Top margin line (Red)
+    const topMargin = 60;
+
+    for (let y = topMargin; y < height; y += lineSpacing) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-    
+
     // Draw vertical columns
     const col1 = width * 0.15; // Date column
     const col2 = width * 0.40; // Party column
     const col3 = width * 0.70; // Details column
-    
-    ctx.strokeStyle = '#d4d4a8';
-    ctx.setLineDash([5, 5]); // Dashed lines
+
+    // Vertical lines (Red for margin/columns)
+    ctx.strokeStyle = '#f87171'; // Red-400
+    ctx.lineWidth = 1.5; // Slightly thicker
+
     [col1, col2, col3].forEach(x => {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, height);
       ctx.stroke();
     });
-    ctx.setLineDash([]); // Reset
-    
+
     // Add column headers at top
-    ctx.fillStyle = '#78716c';
-    ctx.font = '12px sans-serif';
-    ctx.fillText('Date', 10, 20);
-    ctx.fillText('Party Name', col1 + 10, 20);
-    ctx.fillText('Details', col2 + 10, 20);
-    ctx.fillText('Amount', col3 + 10, 20);
+    ctx.fillStyle = '#ef4444'; // Red text
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Date', 10, 35);
+    ctx.fillText('Party Name', col1 + 10, 35);
+    ctx.fillText('Details', col2 + 10, 35);
+    ctx.fillText('Amount', col3 + 10, 35);
   }
 };
 
@@ -67,7 +71,7 @@ const cashBook: PaperTemplate = {
     // Fill background
     ctx.fillStyle = '#fffbeb';
     ctx.fillRect(0, 0, width, height);
-    
+
     // Draw center line (divides Cash In / Cash Out)
     const centerX = width / 2;
     ctx.strokeStyle = '#fb923c';
@@ -76,19 +80,19 @@ const cashBook: PaperTemplate = {
     ctx.moveTo(centerX, 0);
     ctx.lineTo(centerX, height);
     ctx.stroke();
-    
+
     // Draw horizontal lines
     ctx.strokeStyle = '#fed7aa';
     ctx.lineWidth = 1;
     const lineSpacing = 40;
-    
+
     for (let y = lineSpacing; y < height; y += lineSpacing) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-    
+
     // Add headers
     ctx.fillStyle = '#9a3412';
     ctx.font = 'bold 14px sans-serif';
@@ -107,14 +111,14 @@ const doubleEntry: PaperTemplate = {
     // Fill background
     ctx.fillStyle = '#f0fdf4';
     ctx.fillRect(0, 0, width, height);
-    
+
     // Draw columns: Date | Jama | Kharcha
     const col1 = width * 0.25; // Date column
     const col2 = width * 0.60; // Jama column
-    
+
     ctx.strokeStyle = '#bbf7d0';
     ctx.lineWidth = 1;
-    
+
     // Vertical lines
     [col1, col2].forEach(x => {
       ctx.beginPath();
@@ -122,7 +126,7 @@ const doubleEntry: PaperTemplate = {
       ctx.lineTo(x, height);
       ctx.stroke();
     });
-    
+
     // Horizontal lines
     const lineSpacing = 40;
     for (let y = lineSpacing; y < height; y += lineSpacing) {
@@ -131,7 +135,7 @@ const doubleEntry: PaperTemplate = {
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-    
+
     // Add headers
     ctx.fillStyle = '#166534';
     ctx.font = 'bold 13px sans-serif';
@@ -151,16 +155,16 @@ const partyLedger: PaperTemplate = {
     // Fill background
     ctx.fillStyle = '#f0f9ff';
     ctx.fillRect(0, 0, width, height);
-    
+
     // Draw columns: Date | Party | Given | Received | Balance
     const col1 = width * 0.15; // Date
     const col2 = width * 0.35; // Party
     const col3 = width * 0.55; // Given
     const col4 = width * 0.75; // Received
-    
+
     ctx.strokeStyle = '#bae6fd';
     ctx.lineWidth = 1;
-    
+
     // Vertical lines
     [col1, col2, col3, col4].forEach(x => {
       ctx.beginPath();
@@ -168,7 +172,7 @@ const partyLedger: PaperTemplate = {
       ctx.lineTo(x, height);
       ctx.stroke();
     });
-    
+
     // Horizontal lines
     const lineSpacing = 40;
     for (let y = lineSpacing; y < height; y += lineSpacing) {
@@ -177,7 +181,7 @@ const partyLedger: PaperTemplate = {
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-    
+
     // Add headers
     ctx.fillStyle = '#075985';
     ctx.font = 'bold 11px sans-serif';

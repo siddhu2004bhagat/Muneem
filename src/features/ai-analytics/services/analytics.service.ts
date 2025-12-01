@@ -1,6 +1,7 @@
 import { AnalyticsSummary, TrendsResponse } from '../types';
+import { getApiUrl } from '@/lib/api-config';
 
-const BASE_URL = 'http://localhost:8000/api/v1/ai/analytics';
+const BASE_URL = getApiUrl('/ai/analytics');
 
 export const analyticsService = {
   async getSummary(): Promise<AnalyticsSummary> {

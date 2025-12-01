@@ -127,11 +127,36 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
 
   const getPosition = (e: React.PointerEvent) => {
     const canvas = canvasRef.current!;
+    if (!canvas) return { x: 0, y: 0, pressure: 1 };
+    
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left - config.pan.x) / config.zoom;
-    const y = (e.clientY - rect.top - config.pan.y) / config.zoom;
-    const pressure = (e as React.PointerEvent & { pressure?: number }).pressure ?? 1;
-    return { x, y, pressure };
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Calculate coordinates accounting for DPR scaling and canvas transform
+    // Canvas is scaled by DPR internally, so we need to account for that
+    const clientX = e.clientX - rect.left;
+    const clientY = e.clientY - rect.top;
+    
+    // Account for zoom and pan
+    const x = (clientX - config.pan.x) / config.zoom;
+    const y = (clientY - config.pan.y) / config.zoom;
+    
+    // Get pressure - for touch devices, use width/height as pressure indicator
+    let pressure = (e as React.PointerEvent & { pressure?: number }).pressure ?? 1;
+    
+    // For touch devices without pressure support, simulate based on touch area
+    if (e.pointerType === 'touch' && pressure === 1) {
+      // Use touch width/height to estimate pressure (larger touch = more pressure)
+      const touchWidth = (e as any).width || 0;
+      const touchHeight = (e as any).height || 0;
+      const touchArea = Math.max(touchWidth, touchHeight);
+      if (touchArea > 0) {
+        // Normalize touch area to pressure (0.5 to 1.0 range)
+        pressure = Math.min(1.0, Math.max(0.5, 0.5 + (touchArea / 60) * 0.5));
+      }
+    }
+    
+    return { x, y, pressure: Math.max(0.1, Math.min(1.0, pressure)) };
   };
 
   const { onPointerDown, onPointerMove, onPointerUp } = usePointerEvents({
@@ -528,10 +553,16 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
             style={{
               transform: `scale(${config.zoom}) translate(${config.pan.x}px, ${config.pan.y}px)`,
               transformOrigin: '0 0',
+              touchAction: 'none',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none'
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onUp}
+            onPointerCancel={onUp}
+            onPointerLeave={onUp}
           />
         </div>
 

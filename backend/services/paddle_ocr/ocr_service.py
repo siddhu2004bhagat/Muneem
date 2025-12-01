@@ -1,25 +1,26 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from paddleocr import PaddleOCR
+import pytesseract
 from typing import Optional
 import base64
 import io
 from PIL import Image
+import numpy as np
 
 
-app = FastAPI(title="MUNEEM PaddleOCR Service")
-ocr = PaddleOCR(use_angle_cls=True, lang='en')
+app = FastAPI(title="MUNEEM OCR Service")
 
 
 @app.get("/health")
 def health_check():
-    return {"status": "healthy", "service": "PaddleOCR"}
+    return {"status": "healthy", "service": "Tesseract OCR"}
 
 
 @app.get("/")
 def root():
     return {
-        "service": "MUNEEM PaddleOCR Service",
+        "service": "MUNEEM OCR Service",
+        "engine": "Tesseract 5.x",
         "status": "running",
         "endpoints": {
             "health": "/health",
@@ -37,22 +38,24 @@ class OCRRequest(BaseModel):
 @app.post("/recognize")
 def recognize(req: OCRRequest):
     try:
+        # Decode base64 image
         img_bytes = base64.b64decode(req.image_base64)
         image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Invalid image data: {exc}")
 
-    results = ocr.ocr(image, cls=True)
-    if not results or not results[0]:
-        return {"text": "", "confidence": 0.0}
-
-    lines = results[0]
-    text = " ".join([line[1][0] for line in lines]).strip()
-    avg_conf = sum(line[1][1] for line in lines) / len(lines)
-
-    return {"text": text, "confidence": float(avg_conf)}
-
-
-
-
-
+    try:
+        # Perform OCR using Tesseract
+        text = pytesseract.image_to_string(image)
+        
+        # Get confidence data
+        data = pytesseract.image_to_data(image, output_type=pytesseract.Output.DICT)
+        confidences = [float(conf) for conf in data['conf'] if conf != '-1']
+        avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
+        
+        return {
+            "text": text.strip(),
+            "confidence": avg_conf / 100.0  # Normalize to 0-1 range
+        }
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"OCR processing failed: {exc}")

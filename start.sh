@@ -29,8 +29,9 @@ if [ ! -d "venv" ]; then
 else
     source venv/bin/activate
 fi
-# Start without reload for faster startup (reload only in dev)
-uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/backend.log 2>&1 &
+# Start with memory-aware worker count (1 worker for Pi 4, 2 for Pi 5)
+# Use single worker for Pi 4 to conserve memory
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 > /tmp/backend.log 2>&1 &
 BACKEND_PID=$!
 cd "$SCRIPT_DIR"
 
@@ -80,12 +81,24 @@ else
     echo "⏳ Frontend: Starting (may take 5-10 seconds)..."
 fi
 
+# Get LAN IP address
+LAN_IP=$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+
 echo ""
 echo "🌐 Application URLs:"
-echo "   Frontend: http://localhost:5173"
-echo "   Backend API: http://localhost:8000"
-echo "   PaddleOCR: http://localhost:9000"
 echo ""
+echo "   Local Access:"
+echo "   - Frontend: http://localhost:5173"
+echo "   - Backend API: http://localhost:8000"
+echo "   - PaddleOCR: http://localhost:9000"
+echo ""
+if [ "$LAN_IP" != "localhost" ]; then
+  echo "   LAN Access (for other devices):"
+  echo "   - Frontend: http://$LAN_IP:5173"
+  echo "   - Backend API: http://$LAN_IP:8000"
+  echo "   - PaddleOCR: http://$LAN_IP:9000"
+  echo ""
+fi
 echo "✅ Startup complete! Services running in background."
 echo "   To stop: ./stop.sh or kill processes on ports 5173, 8000, 9000"
 

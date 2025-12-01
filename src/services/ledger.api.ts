@@ -3,7 +3,9 @@
  * Connects frontend with backend API for ledger entries
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+import { getApiBaseUrl } from '@/lib/api-config';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || getApiBaseUrl();
 const API_ENDPOINT = `${API_BASE_URL}/api/v1/ledger`;
 
 export interface LedgerEntry {

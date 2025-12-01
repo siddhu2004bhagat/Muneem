@@ -27,6 +27,7 @@ websockets==12.0
 
 # Utilities
 python-dateutil==2.8.2
+psutil>=5.9.0  # Memory monitoring for Raspberry Pi
 
 # HTTP requests (for WhatsApp API)
 requests>=2.31.0
