@@ -130,12 +130,15 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     if (!canvas) return { x: 0, y: 0, pressure: 1 };
     
     const rect = canvas.getBoundingClientRect();
+    const container = containerRef.current;
     const dpr = window.devicePixelRatio || 1;
     
     // Calculate coordinates accounting for DPR scaling and canvas transform
     // Canvas is scaled by DPR internally, so we need to account for that
     const clientX = e.clientX - rect.left;
-    const clientY = e.clientY - rect.top;
+    // Account for scroll position when calculating Y coordinate
+    const scrollY = container ? container.scrollTop : 0;
+    const clientY = e.clientY - rect.top + scrollY;
     
     // Account for zoom and pan
     const x = (clientX - config.pan.x) / config.zoom;
@@ -507,7 +510,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         {/* Canvas Container */}
         <div
           ref={containerRef}
-          className="relative overflow-hidden rounded-xl border-2 border-border shadow-lg bg-white"
+          className="relative overflow-y-auto overflow-x-hidden rounded-xl border-2 border-border shadow-lg bg-white virtual-scroll-container"
           style={{ height: '500px' }}
         >
           {/* Drawing hint */}

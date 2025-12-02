@@ -30,13 +30,24 @@ export function usePointerEvents(
     activePointerIdRef.current = e.pointerId;
     (e.target as Element).setPointerCapture(e.pointerId);
     const { x, y, pressure } = opts.getPosition(e);
-    opts.beginStroke({ x, y, pressure: Math.max(0.1, pressure || 1), timestamp: Date.now() });
+    opts.beginStroke({ 
+      x, 
+      y, 
+      pressure: Math.max(0.1, pressure || 1), 
+      timestamp: performance.now() // More precise timing
+    });
   }, [opts]);
 
   const onPointerMove = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     if (activePointerIdRef.current !== e.pointerId) return;
+    // Use performance.now() for better precision (faster than Date.now())
     const { x, y, pressure } = opts.getPosition(e);
-    opts.extendStroke({ x, y, pressure: Math.max(0.1, pressure || 1), timestamp: Date.now() });
+    opts.extendStroke({ 
+      x, 
+      y, 
+      pressure: Math.max(0.1, pressure || 1), 
+      timestamp: performance.now() // More precise timing
+    });
   }, [opts]);
 
   const onPointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {

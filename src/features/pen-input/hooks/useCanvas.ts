@@ -31,10 +31,16 @@ export function useCanvas() {
   // Real-time smoothing buffer for incremental drawing
   const smoothingBufferRef = useRef<StrokePoint[]>([]);
   const rafIdRef = useRef<number | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
+  const lastProcessedTimeRef = useRef<number>(0);
+  const pendingPointsRef = useRef<StrokePoint[]>([]);
+  
+  // Performance optimization: minimum time between point processing (throttle)
+  const MIN_PROCESSING_INTERVAL = 8; // ~120fps max (8ms = 125fps)
 
   const [config, setConfig] = useState<CanvasConfig>({
     width: 1024,
-    height: 400,
+    height: 5000, // Increased height for scrolling
     backgroundColor: '#FFF9E6',
     gridType: 'lined',
     zoom: 1,
@@ -59,17 +65,26 @@ export function useCanvas() {
     if (!c || !b || !container) return;
     const dpr = DPR();
     const rect = container.getBoundingClientRect();
+    // Use config height for canvas (allows scrolling), but viewport width
     [c, b].forEach(el => {
       el.width = Math.max(1, rect.width) * dpr;
-      el.height = Math.max(1, rect.height) * dpr;
+      el.height = Math.max(1, config.height) * dpr; // Use config height for scrolling
       el.style.width = `${Math.max(1, rect.width)}px`;
-      el.style.height = `${Math.max(1, rect.height)}px`;
-      const ctx = el.getContext('2d');
-      if (ctx) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.scale(dpr, dpr); }
+      el.style.height = `${config.height}px`; // Full canvas height for scrolling
+      const ctx = el.getContext('2d', { 
+        alpha: true,
+        desynchronized: true, // Better performance on tablets
+        willReadFrequently: false 
+      });
+      if (ctx) { 
+        ctx.setTransform(1, 0, 0, 1, 0, 0); 
+        ctx.scale(dpr, dpr);
+        if (el === c) ctxRef.current = ctx; // Cache main canvas context
+      }
     });
     drawBackground();
     redrawAll();
-  }, [drawBackground]);
+  }, [drawBackground, config.height]);
 
   useEffect(() => {
     const ro = new ResizeObserver(() => resizeToContainer());
@@ -212,162 +227,236 @@ export function useCanvas() {
 
   // Public API used by pointer events
   const beginStroke = useCallback((p: StrokePoint) => {
-    // Log tool being used for debugging
-    console.log(`[useCanvas] Starting stroke with tool: ${tool}, color: ${color}, width: ${width}`);
+    // Reset performance tracking
+    lastProcessedTimeRef.current = performance.now();
+    pendingPointsRef.current = [];
+    smoothingBufferRef.current = [p];
+    
+    // Ensure canvas context is cached
+    if (!ctxRef.current && canvasRef.current) {
+      ctxRef.current = canvasRef.current.getContext('2d', {
+        alpha: true,
+        desynchronized: true, // Better performance on tablets
+        willReadFrequently: false
+      });
+    }
     
     const stroke: Stroke = {
       id: `s_${Date.now()}_${Math.random()}`,
       tool,
-      color: tool === 'eraser' ? '#000000' : color, // Eraser doesn't use color but we store it
-      width: tool === 'eraser' ? width * 4 : width, // Eraser is 4x wider for better visibility
+      color: tool === 'eraser' ? '#000000' : color,
+      width: tool === 'eraser' ? width * 4 : width,
       opacity,
       points: [p],
       timestamp: Date.now(),
     };
     currentStrokeRef.current = stroke;
     lastPointRef.current = p;
+    (stroke as any).lastDrawnIndex = 0; // Initialize drawing index
   }, [tool, color, width, opacity]);
 
   const extendStroke = useCallback((p: StrokePoint) => {
     const stroke = currentStrokeRef.current; if (!stroke) return;
-    const last = lastPointRef.current || stroke.points[stroke.points.length - 1];
-
-    // Interpolate points for fast movements (predictive drawing)
-    const interpolated = CanvasService.interpolatePoints(last, p, 5);
+    const now = performance.now();
     
-    // Apply real-time smoothing to each interpolated point
+    // Throttle: Skip processing if too soon (reduces lag on fast movements)
+    if (now - lastProcessedTimeRef.current < MIN_PROCESSING_INTERVAL) {
+      pendingPointsRef.current.push(p);
+      return; // Will be processed in next RAF
+    }
+    
+    const last = lastPointRef.current || stroke.points[stroke.points.length - 1];
+    lastProcessedTimeRef.current = now;
+
+    // Calculate distance and velocity
+    const dx = p.x - last.x;
+    const dy = p.y - last.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const dt = p.timestamp - last.timestamp;
+    const velocity = dt > 0 ? distance / dt : 0;
+
+    // OPTIMIZATION: Skip interpolation for slow movements (reduces processing)
+    // Only interpolate if movement is fast (>10px) or very fast (>20px)
+    let pointsToAdd: StrokePoint[] = [];
+    if (distance > 20) {
+      // Very fast: interpolate with larger threshold
+      pointsToAdd = CanvasService.interpolatePoints(last, p, 8);
+    } else if (distance > 10) {
+      // Fast: interpolate with normal threshold
+      pointsToAdd = CanvasService.interpolatePoints(last, p, 5);
+    } else {
+      // Slow: add point directly (no interpolation needed)
+      pointsToAdd = [p];
+    }
+
+    // OPTIMIZATION: Light smoothing during drawing (only 2-point buffer for speed)
+    // Heavy smoothing will be applied at stroke end
     const smoothedPoints: StrokePoint[] = [];
-    for (const point of interpolated) {
-      const smoothed = CanvasService.smoothPointIncremental(
-        point,
-        smoothingBufferRef.current,
-        4 // Buffer size for smoothing
-      );
+    for (const point of pointsToAdd) {
+      // Light smoothing: only use last 2 points for speed
+      const buffer = smoothingBufferRef.current.slice(-2);
+      const smoothed = buffer.length >= 2
+        ? CanvasService.smoothPointIncremental(point, buffer, 2)
+        : point; // No smoothing if buffer too small
+      
       smoothedPoints.push(smoothed);
       smoothingBufferRef.current.push(smoothed);
       
-      // Keep buffer size manageable
-      if (smoothingBufferRef.current.length > 5) {
+      // Keep buffer small (max 3 points) for performance
+      if (smoothingBufferRef.current.length > 3) {
         smoothingBufferRef.current.shift();
       }
     }
 
-    // Add all smoothed points to stroke
+    // Add points to stroke
     for (const smoothedPoint of smoothedPoints) {
       stroke.points.push(smoothedPoint);
     }
     lastPointRef.current = smoothedPoints[smoothedPoints.length - 1] || p;
 
-    // Use requestAnimationFrame for smoother rendering
-    if (rafIdRef.current !== null) {
-      cancelAnimationFrame(rafIdRef.current);
-    }
-
-    rafIdRef.current = requestAnimationFrame(() => {
-      const c = canvasRef.current; const ctx = c?.getContext('2d');
-      if (!ctx || stroke.points.length < 2) return;
-
-      const lastDrawnIndex = (stroke as any).lastDrawnIndex || 0;
-      const pointsToDraw = stroke.points.slice(lastDrawnIndex);
-      
-      if (pointsToDraw.length < 2) return;
-
-      ctx.save();
-
-      // iPad-like Physics & Rendering
-      if (stroke.tool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.globalAlpha = stroke.opacity;
-        ctx.lineWidth = stroke.width * 4;
-      } else if (stroke.tool === 'highlighter') {
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.globalAlpha = 0.3;
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.width * 6;
-        ctx.lineCap = 'butt';
-      } else if (stroke.tool === 'pencil') {
-        ctx.globalCompositeOperation = 'source-over';
-        const pattern = getPattern(ctx, stroke.color, 0.9);
-        ctx.strokeStyle = pattern || stroke.color;
-        ctx.globalAlpha = 1;
-        ctx.lineWidth = Math.max(0.8, stroke.width * 0.9);
-        ctx.lineCap = 'round';
-      } else {
-        // Default Pen (Variable Width) - smooth and natural
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = stroke.opacity;
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.width;
-        ctx.lineCap = 'round';
-      }
-
-      if (stroke.tool !== 'highlighter') {
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-      } else {
-        ctx.lineCap = 'butt';
-        ctx.lineJoin = 'round';
-      }
-
-      // Draw smooth curve using improved Bezier control points
-      ctx.beginPath();
-      const startPoint = lastDrawnIndex > 0 ? stroke.points[lastDrawnIndex - 1] : pointsToDraw[0];
-      ctx.moveTo(startPoint.x, startPoint.y);
-
-      for (let i = 1; i < pointsToDraw.length; i++) {
-        const p0 = i === 1 && lastDrawnIndex > 0 
-          ? stroke.points[lastDrawnIndex - 1] 
-          : pointsToDraw[i - 1];
-        const p1 = pointsToDraw[i];
-        const p2 = i < pointsToDraw.length - 1 ? pointsToDraw[i + 1] : undefined;
-
-        // Calculate smooth control point
-        const control = CanvasService.getBezierControlPoint(p0, p1, p2);
-        const midX = (p0.x + p1.x) / 2;
-        const midY = (p0.y + p1.y) / 2;
-
-        // Adjust line width for pen tool based on pressure
-        if (stroke.tool === 'pen') {
-          const pressure = p1.pressure || 0.5;
-          const pressureFactor = 0.7 + (pressure * 0.6);
-          ctx.lineWidth = stroke.width * pressureFactor;
+    // OPTIMIZATION: Batch RAF calls - only schedule if not already scheduled
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        const ctx = ctxRef.current || canvasRef.current?.getContext('2d');
+        if (!ctx || !stroke || stroke.points.length < 2) {
+          rafIdRef.current = null;
+          return;
         }
 
-        ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+        // Process any pending points first
+        if (pendingPointsRef.current.length > 0) {
+          const pending = pendingPointsRef.current;
+          pendingPointsRef.current = [];
+          pending.forEach(pendingPoint => {
+            const last = stroke.points[stroke.points.length - 1];
+            stroke.points.push(pendingPoint);
+            lastPointRef.current = pendingPoint;
+          });
+        }
+
+        const lastDrawnIndex = (stroke as any).lastDrawnIndex || 0;
+        const pointsToDraw = stroke.points.slice(lastDrawnIndex);
         
-        if (i === pointsToDraw.length - 1) {
-          ctx.lineTo(p1.x, p1.y);
+        if (pointsToDraw.length < 2) {
+          rafIdRef.current = null;
+          return;
         }
-      }
 
-      ctx.stroke();
-      ctx.restore();
-      
-      (stroke as any).lastDrawnIndex = stroke.points.length;
-      rafIdRef.current = null;
-    });
+        // OPTIMIZATION: Cache context state to avoid repeated getContext calls
+        // Only save/restore when tool settings change
+        const needsSave = !(stroke as any).ctxStateSet;
+        if (needsSave) ctx.save();
+
+        // Set context state once per stroke
+        if (!(stroke as any).ctxStateSet) {
+          if (stroke.tool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.globalAlpha = stroke.opacity;
+            ctx.lineWidth = stroke.width * 4;
+          } else if (stroke.tool === 'highlighter') {
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width * 6;
+            ctx.lineCap = 'butt';
+            ctx.lineJoin = 'round';
+          } else if (stroke.tool === 'pencil') {
+            ctx.globalCompositeOperation = 'source-over';
+            const pattern = getPattern(ctx, stroke.color, 0.9);
+            ctx.strokeStyle = pattern || stroke.color;
+            ctx.globalAlpha = 1;
+            ctx.lineWidth = Math.max(0.8, stroke.width * 0.9);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+          } else {
+            // Default Pen
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = stroke.opacity;
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+          }
+          (stroke as any).ctxStateSet = true;
+        }
+
+        // Draw smooth curve - optimized for performance
+        ctx.beginPath();
+        const startPoint = lastDrawnIndex > 0 ? stroke.points[lastDrawnIndex - 1] : pointsToDraw[0];
+        ctx.moveTo(startPoint.x, startPoint.y);
+
+        // OPTIMIZATION: Simplified curve drawing for speed
+        // Use simpler curves during drawing, complex smoothing at end
+        for (let i = 1; i < pointsToDraw.length; i++) {
+          const p0 = i === 1 && lastDrawnIndex > 0 
+            ? stroke.points[lastDrawnIndex - 1] 
+            : pointsToDraw[i - 1];
+          const p1 = pointsToDraw[i];
+          const p2 = i < pointsToDraw.length - 1 ? pointsToDraw[i + 1] : undefined;
+
+          // Simplified control point calculation for speed
+          const control = p2 
+            ? CanvasService.getBezierControlPoint(p0, p1, p2)
+            : { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+          
+          const midX = (p0.x + p1.x) / 2;
+          const midY = (p0.y + p1.y) / 2;
+
+          // Adjust line width for pen tool
+          if (stroke.tool === 'pen') {
+            const pressure = p1.pressure || 0.5;
+            const pressureFactor = 0.7 + (pressure * 0.6);
+            ctx.lineWidth = stroke.width * pressureFactor;
+          }
+
+          ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+        }
+
+        // Draw to final point
+        const finalPoint = pointsToDraw[pointsToDraw.length - 1];
+        ctx.lineTo(finalPoint.x, finalPoint.y);
+        ctx.stroke();
+        
+        if (needsSave) ctx.restore();
+        
+        (stroke as any).lastDrawnIndex = stroke.points.length;
+        rafIdRef.current = null;
+      });
+    }
   }, [width, tool, getPattern]);
 
   const endStroke = useCallback(() => {
-    // Cancel any pending animation frame
+    // Cancel any pending animation frame and process immediately
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
       rafIdRef.current = null;
     }
 
     const stroke = currentStrokeRef.current; if (!stroke) return;
-    currentStrokeRef.current = null; lastPointRef.current = null;
     
-    // Final smoothing pass for the complete stroke
+    // Process any remaining pending points
+    if (pendingPointsRef.current.length > 0) {
+      pendingPointsRef.current.forEach(pendingPoint => {
+        stroke.points.push(pendingPoint);
+      });
+      pendingPointsRef.current = [];
+    }
+    
+    currentStrokeRef.current = null; 
+    lastPointRef.current = null;
+    
+    // OPTIMIZATION: Apply heavy smoothing only at end (not during drawing)
+    // This gives smooth result without lag during drawing
     const smoothed = { ...stroke, points: StrokeEngine.smooth(stroke.points) };
     
-    // Clear smoothing buffer
+    // Clear buffers
     smoothingBufferRef.current = [];
+    lastProcessedTimeRef.current = 0;
     
-    // Redraw the entire smoothed stroke
+    // Redraw the entire smoothed stroke with final smoothing
     redrawAll();
     
-    // Persist via command
+    // Persist via command (async, non-blocking)
     historyRef.current.push(addStrokeCommand(smoothed));
   }, [addStrokeCommand, redrawAll]);
 
