@@ -40,7 +40,7 @@ export function useCanvas() {
 
   const [config, setConfig] = useState<CanvasConfig>({
     width: 1024,
-    height: 5000, // Increased height for scrolling
+    height: 15000, // Extended height for more writing space
     backgroundColor: '#FFF9E6',
     gridType: 'lined',
     zoom: 1,
