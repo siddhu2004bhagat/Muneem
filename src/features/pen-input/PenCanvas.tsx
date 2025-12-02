@@ -556,7 +556,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
             style={{
               transform: `scale(${config.zoom}) translate(${config.pan.x}px, ${config.pan.y}px)`,
               transformOrigin: '0 0',
-              touchAction: 'none',
+              touchAction: 'pan-y pinch-zoom', // Allow two-finger scrolling while keeping single-touch drawing
               userSelect: 'none',
               WebkitUserSelect: 'none',
               WebkitTouchCallout: 'none'
