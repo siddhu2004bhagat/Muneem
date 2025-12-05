@@ -133,16 +133,25 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     const container = containerRef.current;
     const dpr = window.devicePixelRatio || 1;
     
-    // Calculate coordinates accounting for DPR scaling and canvas transform
-    // Canvas is scaled by DPR internally, so we need to account for that
-    const clientX = e.clientX - rect.left;
-    // Account for scroll position when calculating Y coordinate
-    const scrollY = container ? container.scrollTop : 0;
-    const clientY = e.clientY - rect.top + scrollY;
+    // CRITICAL FIX FOR IPAD: Properly calculate coordinates accounting for CSS transform
+    // Canvas has CSS transform: scale(zoom) translate(pan.x, pan.y)
+    // CSS transforms are applied right-to-left: first translate, then scale
+    // So: canvas coord (x,y) → screen: (x + pan.x) * zoom, (y + pan.y) * zoom
+    // Inverse: screen coord → canvas: (screenX / zoom) - pan.x, (screenY / zoom) - pan.y
     
-    // Account for zoom and pan
-    const x = (clientX - config.pan.x) / config.zoom;
-    const y = (clientY - config.pan.y) / config.zoom;
+    // Get coordinates relative to the transformed canvas bounding box (in screen pixels)
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
+    
+    // Account for scroll position (canvas is absolutely positioned, scroll is in container)
+    // scrollY is in CSS pixels, same as canvas coordinates
+    const scrollY = container ? container.scrollTop : 0;
+    
+    // Inverse the CSS transform to get canvas coordinates
+    // Transform order: translate then scale, so inverse is: scale then translate
+    // Canvas context is scaled by DPR internally, so we work in CSS pixels
+    const x = (screenX / config.zoom) - config.pan.x;
+    const y = ((screenY + scrollY) / config.zoom) - config.pan.y;
     
     // Get pressure - for touch devices, use width/height as pressure indicator
     let pressure = (e as React.PointerEvent & { pressure?: number }).pressure ?? 1;

@@ -36,7 +36,9 @@ export function useCanvas() {
   const pendingPointsRef = useRef<StrokePoint[]>([]);
   
   // Performance optimization: minimum time between point processing (throttle)
-  const MIN_PROCESSING_INTERVAL = 8; // ~120fps max (8ms = 125fps)
+  // iPad-optimized: Lower throttling for better touch responsiveness
+  // iPad touch events fire more frequently, so we need lower throttling
+  const MIN_PROCESSING_INTERVAL = 2; // ~500fps max (2ms = 500fps, but limited by RAF ~60fps on iPad)
 
   const [config, setConfig] = useState<CanvasConfig>({
     width: 1024,
@@ -118,7 +120,7 @@ export function useCanvas() {
       if (s.tool === 'eraser') {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.globalAlpha = s.opacity;
-        ctx.lineWidth = s.width * 4;
+        ctx.lineWidth = s.width; // s.width is already multiplied by 4 in beginStroke
       } else if (s.tool === 'highlighter') {
         ctx.globalCompositeOperation = 'multiply';
         ctx.globalAlpha = 0.3;
@@ -172,15 +174,8 @@ export function useCanvas() {
 
           ctx.lineWidth = segmentWidth;
           
-          // Use quadratic curve with proper control point for smoothness
-          const midX = (p0.x + p1.x) / 2;
-          const midY = (p0.y + p1.y) / 2;
-          ctx.quadraticCurveTo(control.x, control.y, midX, midY);
-          
-          // Draw segment if we have next point, otherwise draw to end
-          if (i === s.points.length - 1) {
-            ctx.lineTo(p1.x, p1.y);
-          }
+          // Draw to actual point for pen tool (fixes gaps and improves smoothness)
+          ctx.quadraticCurveTo(control.x, control.y, p1.x, p1.y);
         }
         ctx.stroke();
       } else {
@@ -268,12 +263,10 @@ export function useCanvas() {
     const last = lastPointRef.current || stroke.points[stroke.points.length - 1];
     lastProcessedTimeRef.current = now;
 
-    // Calculate distance and velocity
+    // Calculate distance for interpolation (velocity calculation removed - was unused)
     const dx = p.x - last.x;
     const dy = p.y - last.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const dt = p.timestamp - last.timestamp;
-    const velocity = dt > 0 ? distance / dt : 0;
 
     // OPTIMIZATION: Skip interpolation for slow movements (reduces processing)
     // Only interpolate if movement is fast (>10px) or very fast (>20px)
@@ -323,15 +316,34 @@ export function useCanvas() {
           return;
         }
 
-        // Process any pending points first
+        // Process any pending points first with proper interpolation for smooth connections
         if (pendingPointsRef.current.length > 0) {
           const pending = pendingPointsRef.current;
           pendingPointsRef.current = [];
-          pending.forEach(pendingPoint => {
-            const last = stroke.points[stroke.points.length - 1];
-            stroke.points.push(pendingPoint);
-            lastPointRef.current = pendingPoint;
-          });
+          const last = stroke.points[stroke.points.length - 1] || lastPointRef.current;
+          
+          if (last && pending.length > 0) {
+            // Process pending points with interpolation to ensure smooth connections
+            let currentPoint = last;
+            for (const pendingPoint of pending) {
+              const dx = pendingPoint.x - currentPoint.x;
+              const dy = pendingPoint.y - currentPoint.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              // Interpolate if distance is large (fast movement)
+              if (distance > 10) {
+                const interpolated = CanvasService.interpolatePoints(currentPoint, pendingPoint, 5);
+                // Add all interpolated points except the last (will be added as pendingPoint)
+                for (let j = 0; j < interpolated.length - 1; j++) {
+                  stroke.points.push(interpolated[j]);
+                }
+              }
+              
+              stroke.points.push(pendingPoint);
+              currentPoint = pendingPoint;
+            }
+            lastPointRef.current = currentPoint;
+          }
         }
 
         const lastDrawnIndex = (stroke as any).lastDrawnIndex || 0;
@@ -352,7 +364,7 @@ export function useCanvas() {
           if (stroke.tool === 'eraser') {
             ctx.globalCompositeOperation = 'destination-out';
             ctx.globalAlpha = stroke.opacity;
-            ctx.lineWidth = stroke.width * 4;
+            ctx.lineWidth = stroke.width; // stroke.width is already multiplied by 4 in beginStroke
           } else if (stroke.tool === 'highlighter') {
             ctx.globalCompositeOperation = 'multiply';
             ctx.globalAlpha = 0.3;
@@ -380,41 +392,63 @@ export function useCanvas() {
           (stroke as any).ctxStateSet = true;
         }
 
-        // Draw smooth curve - optimized for performance
+        // HYBRID APPROACH: Simplified quadratic curves for smooth handwriting with good performance
+        // Uses fast midpoint-based control points (faster than full Bezier, smoother than lineTo)
         ctx.beginPath();
         const startPoint = lastDrawnIndex > 0 ? stroke.points[lastDrawnIndex - 1] : pointsToDraw[0];
         ctx.moveTo(startPoint.x, startPoint.y);
 
-        // OPTIMIZATION: Simplified curve drawing for speed
-        // Use simpler curves during drawing, complex smoothing at end
-        for (let i = 1; i < pointsToDraw.length; i++) {
-          const p0 = i === 1 && lastDrawnIndex > 0 
-            ? stroke.points[lastDrawnIndex - 1] 
-            : pointsToDraw[i - 1];
-          const p1 = pointsToDraw[i];
-          const p2 = i < pointsToDraw.length - 1 ? pointsToDraw[i + 1] : undefined;
-
-          // Simplified control point calculation for speed
-          const control = p2 
-            ? CanvasService.getBezierControlPoint(p0, p1, p2)
-            : { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
-          
-          const midX = (p0.x + p1.x) / 2;
-          const midY = (p0.y + p1.y) / 2;
-
-          // Adjust line width for pen tool
-          if (stroke.tool === 'pen') {
+        if (stroke.tool === 'pen') {
+          // Pen tool: Use simplified quadratic curves for smooth handwriting
+          // Fast midpoint-based control points provide smooth curves without expensive calculations
+          let lastWidth = stroke.width; // Track last width
+          for (let i = 1; i < pointsToDraw.length; i++) {
+            const p0 = i === 1 && lastDrawnIndex > 0 
+              ? stroke.points[lastDrawnIndex - 1] 
+              : pointsToDraw[i - 1];
+            const p1 = pointsToDraw[i];
+            
             const pressure = p1.pressure || 0.5;
             const pressureFactor = 0.7 + (pressure * 0.6);
-            ctx.lineWidth = stroke.width * pressureFactor;
+            const newWidth = stroke.width * pressureFactor;
+            
+            // More responsive width changes for precise handwriting (every 2-3 points instead of 5)
+            // This ensures pressure changes are reflected quickly during writing
+            const prevPressure = p0.pressure || 0.5;
+            const pressureDiff = Math.abs(pressure - prevPressure);
+            if (i === 1 || pressureDiff > 0.08 || i % 3 === 0) {
+              ctx.lineWidth = newWidth;
+              lastWidth = newWidth;
+            }
+            
+            // Simplified quadratic curve: use midpoint as control point (fast and smooth)
+            // This creates smooth curves for handwriting while maintaining performance
+            const controlX = (p0.x + p1.x) / 2;
+            const controlY = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(controlX, controlY, p1.x, p1.y);
           }
+        } else {
+          // Other tools: Keep original curve drawing
+          let lastWidth = null;
+          for (let i = 1; i < pointsToDraw.length; i++) {
+            const p0 = i === 1 && lastDrawnIndex > 0 
+              ? stroke.points[lastDrawnIndex - 1] 
+              : pointsToDraw[i - 1];
+            const p1 = pointsToDraw[i];
+            const p2 = i < pointsToDraw.length - 1 ? pointsToDraw[i + 1] : undefined;
 
-          ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+            // Simplified control point calculation for speed
+            const control = p2 
+              ? CanvasService.getBezierControlPoint(p0, p1, p2)
+              : { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
+            
+            // For other tools, keep original midpoint drawing
+            const midX = (p0.x + p1.x) / 2;
+            const midY = (p0.y + p1.y) / 2;
+            ctx.quadraticCurveTo(control.x, control.y, midX, midY);
+          }
         }
 
-        // Draw to final point
-        const finalPoint = pointsToDraw[pointsToDraw.length - 1];
-        ctx.lineTo(finalPoint.x, finalPoint.y);
         ctx.stroke();
         
         if (needsSave) ctx.restore();
@@ -441,6 +475,9 @@ export function useCanvas() {
       });
       pendingPointsRef.current = [];
     }
+    
+    // Reset context state flag to prevent state leakage
+    (stroke as any).ctxStateSet = false;
     
     currentStrokeRef.current = null; 
     lastPointRef.current = null;

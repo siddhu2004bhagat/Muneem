@@ -15,14 +15,33 @@ interface ChartsProps {
   currentYear: number;
 }
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Financial Year order: Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec, Jan, Feb, Mar
+const FY_MONTH_ORDER = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
+const FY_MONTH_NAMES = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
 
 export function Charts({ monthlyData, loading, currentYear }: ChartsProps) {
-  // Format monthly data for chart
-  const chartData = monthlyData.map(item => ({
-    ...item,
-    monthName: MONTH_NAMES[item.month - 1],
-  }));
+  // Create map for quick lookup by month number
+  const dataMap = new Map(monthlyData.map(item => [item.month, item]));
+  
+  // Reorder data to Financial Year order (Apr-Mar)
+  const chartData = FY_MONTH_ORDER.map((monthNum, index) => {
+    const data = dataMap.get(monthNum);
+    if (data) {
+      return {
+        ...data,
+        monthName: FY_MONTH_NAMES[index],
+      };
+    }
+    // Fallback for missing months (shouldn't happen, but defensive)
+    return {
+      month: monthNum,
+      sales: 0,
+      expenses: 0,
+      receipts: 0,
+      purchases: 0,
+      monthName: FY_MONTH_NAMES[index],
+    };
+  });
 
   if (loading) {
     return (
