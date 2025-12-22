@@ -8,7 +8,7 @@ from PIL import Image
 import numpy as np
 
 
-app = FastAPI(title="MUNEEM OCR Service")
+app = FastAPI(title="MUNEEM Tesseract OCR Service")
 
 
 @app.get("/health")
@@ -19,7 +19,7 @@ def health_check():
 @app.get("/")
 def root():
     return {
-        "service": "MUNEEM OCR Service",
+        "service": "MUNEEM Tesseract OCR Service",
         "engine": "Tesseract 5.x",
         "status": "running",
         "endpoints": {

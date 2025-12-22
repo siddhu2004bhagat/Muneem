@@ -165,7 +165,7 @@ export function useCanvas() {
 
           // Calculate smooth control point
           const control = CanvasService.getBezierControlPoint(p0, p1, p2);
-          
+
           // Calculate width based on pressure
           const baseWidth = s.width;
           const pressure = p1.pressure || 0.5;
@@ -177,7 +177,7 @@ export function useCanvas() {
           // Draw to actual point for pen tool (fixes gaps and improves smoothness)
           ctx.quadraticCurveTo(control.x, control.y, p1.x, p1.y);
         }
-        ctx.stroke();
+          ctx.stroke();
       } else {
         // Constant width for others (Pencil/Highlighter/Eraser) with smooth curves
         ctx.beginPath();
@@ -314,7 +314,7 @@ export function useCanvas() {
         if (!ctx || !stroke || stroke.points.length < 2) {
           rafIdRef.current = null;
           return;
-        }
+    }
 
         // Process any pending points first with proper interpolation for smooth connections
         if (pendingPointsRef.current.length > 0) {
@@ -361,32 +361,32 @@ export function useCanvas() {
 
         // Set context state once per stroke
         if (!(stroke as any).ctxStateSet) {
-          if (stroke.tool === 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.globalAlpha = stroke.opacity;
+      if (stroke.tool === 'eraser') {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.globalAlpha = stroke.opacity;
             ctx.lineWidth = stroke.width; // stroke.width is already multiplied by 4 in beginStroke
-          } else if (stroke.tool === 'highlighter') {
-            ctx.globalCompositeOperation = 'multiply';
-            ctx.globalAlpha = 0.3;
-            ctx.strokeStyle = stroke.color;
-            ctx.lineWidth = stroke.width * 6;
-            ctx.lineCap = 'butt';
+      } else if (stroke.tool === 'highlighter') {
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.width * 6;
+        ctx.lineCap = 'butt';
             ctx.lineJoin = 'round';
-          } else if (stroke.tool === 'pencil') {
-            ctx.globalCompositeOperation = 'source-over';
-            const pattern = getPattern(ctx, stroke.color, 0.9);
-            ctx.strokeStyle = pattern || stroke.color;
-            ctx.globalAlpha = 1;
+      } else if (stroke.tool === 'pencil') {
+        ctx.globalCompositeOperation = 'source-over';
+        const pattern = getPattern(ctx, stroke.color, 0.9);
+        ctx.strokeStyle = pattern || stroke.color;
+        ctx.globalAlpha = 1;
             ctx.lineWidth = Math.max(0.8, stroke.width * 0.9);
-            ctx.lineCap = 'round';
+        ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-          } else {
+      } else {
             // Default Pen
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.globalAlpha = stroke.opacity;
-            ctx.strokeStyle = stroke.color;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = stroke.opacity;
+        ctx.strokeStyle = stroke.color;
             ctx.lineWidth = stroke.width;
-            ctx.lineCap = 'round';
+        ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
           }
           (stroke as any).ctxStateSet = true;
@@ -427,7 +427,7 @@ export function useCanvas() {
             const controlY = (p0.y + p1.y) / 2;
             ctx.quadraticCurveTo(controlX, controlY, p1.x, p1.y);
           }
-        } else {
+      } else {
           // Other tools: Keep original curve drawing
           let lastWidth = null;
           for (let i = 1; i < pointsToDraw.length; i++) {
@@ -449,7 +449,7 @@ export function useCanvas() {
           }
         }
 
-        ctx.stroke();
+      ctx.stroke();
         
         if (needsSave) ctx.restore();
         

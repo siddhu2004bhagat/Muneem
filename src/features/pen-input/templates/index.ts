@@ -14,15 +14,9 @@ export {
   type TemplateId,
   type TemplateOptions,
   defaultTemplateId,
-} from './paper-templates-v2';
+} from './paper-templates';
 
-// Legacy adapter (for backward compatibility)
-export {
-  drawLegacyTemplate,
-  getLegacyTemplateThumbnail,
-  mapLegacyFormatToTemplate,
-  mapLegacyFormatToOptions,
-} from './paper-templates-legacy-adapter';
+
 
 // Keep old exports from paper-templates.ts for existing code
 export { PAPER_TEMPLATES, getPaperTemplate, type PaperTemplate } from './paper-templates';

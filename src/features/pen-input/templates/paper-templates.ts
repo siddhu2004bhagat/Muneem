@@ -220,3 +220,65 @@ export const getPaperTemplate = (formatId: LedgerFormatId): PaperTemplate => {
   return PAPER_TEMPLATES[formatId] || traditionalKhata;
 };
 
+// --- V2 API Compatibility Layer ---
+
+export type TemplateId = LedgerFormatId | 'blank' | 'lined' | 'columnar';
+export interface TemplateOptions {
+  showDate?: boolean;
+  showHeader?: boolean;
+  lineHeight?: number;
+}
+export const defaultTemplateId: TemplateId = 'traditional-khata';
+
+export function getTemplateName(id: TemplateId): string {
+  // Map simplified IDs to LedgerFormatIds
+  if (id === 'blank') return 'Plain Paper';
+  if (id === 'lined') return 'Lined Paper';
+  if (id === 'columnar') return 'Traditional Khata';
+
+  return PAPER_TEMPLATES[id as LedgerFormatId]?.name || 'Unknown Template';
+}
+
+export function getTemplateDescription(id: TemplateId): string {
+  if (id === 'blank') return 'Clean canvas for freehand drawing';
+  if (id === 'lined') return 'Standard ruled lines';
+  if (id === 'columnar') return 'Classic accounting columns';
+  return 'Accounting template';
+}
+
+export function drawTemplate(
+  ctx: CanvasRenderingContext2D,
+  id: TemplateId,
+  width: number,
+  height: number,
+  options?: TemplateOptions
+): void {
+  // Map simplified IDs to internal templates
+  let templateKey: LedgerFormatId = 'traditional-khata';
+
+  if (id === 'blank' || id === 'modern-minimal') templateKey = 'modern-minimal';
+  else if (id === 'lined') templateKey = 'traditional-khata'; // Fallback for now, or create specific
+  else if (id === 'columnar') templateKey = 'traditional-khata';
+  else if (PAPER_TEMPLATES[id as LedgerFormatId]) templateKey = id as LedgerFormatId;
+
+  const template = PAPER_TEMPLATES[templateKey];
+  if (template) {
+    template.drawBackground(ctx, width, height);
+  }
+}
+
+export function getTemplateThumbnail(
+  id: TemplateId,
+  width: number,
+  height: number
+): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    drawTemplate(ctx, id, width, height);
+  }
+  return canvas;
+}
+

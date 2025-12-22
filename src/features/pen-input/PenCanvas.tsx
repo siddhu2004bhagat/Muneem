@@ -135,23 +135,27 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     
     // CRITICAL FIX FOR IPAD: Properly calculate coordinates accounting for CSS transform
     // Canvas has CSS transform: scale(zoom) translate(pan.x, pan.y)
-    // CSS transforms are applied right-to-left: first translate, then scale
-    // So: canvas coord (x,y) → screen: (x + pan.x) * zoom, (y + pan.y) * zoom
-    // Inverse: screen coord → canvas: (screenX / zoom) - pan.x, (screenY / zoom) - pan.y
+    // CSS transforms apply right-to-left: scale(zoom) THEN translate(pan.x, pan.y)
+    // So: canvas coord (x,y) → screen: (x * zoom) + pan.x, (y * zoom) + pan.y
+    // Inverse: screen coord → canvas: (screenX - pan.x) / zoom, (screenY - pan.y) / zoom
     
-    // Get coordinates relative to the transformed canvas bounding box (in screen pixels)
+    // Get coordinates relative to the canvas element's bounding box (in viewport pixels)
+    // getBoundingClientRect() returns the transformed bounding box
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
     
-    // Account for scroll position (canvas is absolutely positioned, scroll is in container)
-    // scrollY is in CSS pixels, same as canvas coordinates
+    // Account for container scroll (canvas is absolutely positioned, container scrolls)
+    // scrollTop is in CSS pixels, same coordinate space as canvas
     const scrollY = container ? container.scrollTop : 0;
     
-    // Inverse the CSS transform to get canvas coordinates
-    // Transform order: translate then scale, so inverse is: scale then translate
+    // Inverse the CSS transform to get canvas coordinates (in CSS pixels)
+    // CSS transform: scale(zoom) translate(pan.x, pan.y)
+    // Transform order: scale first, then translate
+    // So: canvas (x,y) → screen: (x * zoom + pan.x, y * zoom + pan.y)
+    // Inverse: screen → canvas: ((screenX - pan.x) / zoom, (screenY - pan.y) / zoom)
     // Canvas context is scaled by DPR internally, so we work in CSS pixels
-    const x = (screenX / config.zoom) - config.pan.x;
-    const y = ((screenY + scrollY) / config.zoom) - config.pan.y;
+    const x = (screenX - config.pan.x) / config.zoom;
+    const y = ((screenY + scrollY) - config.pan.y) / config.zoom;
     
     // Get pressure - for touch devices, use width/height as pressure indicator
     let pressure = (e as React.PointerEvent & { pressure?: number }).pressure ?? 1;

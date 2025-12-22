@@ -207,7 +207,7 @@ export default class OCRHybridService {
     reject: (error: Error) => void;
   }>();
 
-  private paddleEndpoint = import.meta.env.VITE_PADDLE_OCR_URL as string | undefined;
+  private remoteEndpoint = import.meta.env.VITE_REMOTE_OCR_URL || import.meta.env.VITE_PADDLE_OCR_URL as string | undefined;
 
   /**
    * Lazy load worker
@@ -301,7 +301,7 @@ export default class OCRHybridService {
   ): Promise<OCRResult[]> {
     // CRITICAL FIX: Route to backend on Linux tablets (Raspberry Pi)
     const ocrMode = options.mode || getRecommendedOCRMode();
-    
+
     if (ocrMode === 'backend' || isLinuxTablet()) {
       console.log('[OCRHybridService] Routing to backend OCR (Linux tablet detected)');
       return this.recognizeWithBackend(canvasEl);
@@ -329,10 +329,18 @@ export default class OCRHybridService {
     // Flatten results from both engines
     const allResults: OCRResult[] = [];
     if (rawResults.tesseract && Array.isArray(rawResults.tesseract)) {
-      allResults.push(...rawResults.tesseract.map(r => ({ ...r, type: 'tesseract' as const })));
+      allResults.push(...rawResults.tesseract.map((r, i) => ({
+        ...r,
+        type: 'tesseract' as const,
+        id: `tes_${Date.now()}_${i}`
+      })));
     }
     if (rawResults.tflite && Array.isArray(rawResults.tflite)) {
-      allResults.push(...rawResults.tflite.map(r => ({ ...r, type: 'tflite' as const })));
+      allResults.push(...rawResults.tflite.map((r, i) => ({
+        ...r,
+        type: 'tflite' as const,
+        id: `tf_${Date.now()}_${i}`
+      })));
     }
 
     // Merge and post-process results
@@ -350,14 +358,14 @@ export default class OCRHybridService {
     const apiBase = getApiBaseUrl();
     const ocrHost = apiBase.replace(':8000', ':9000');
     const ocrEndpoint = `${ocrHost}/recognize`;
-    
+
     // Convert canvas to base64
     const dataUrl = canvasEl.toDataURL('image/png');
     const base64 = dataUrl.split(',')[1];
 
     try {
       this.onProgress?.(0.3); // Indicate processing started
-      
+
       const response = await fetch(ocrEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -392,10 +400,10 @@ export default class OCRHybridService {
       return [result];
     } catch (error) {
       console.error('[OCRHybridService] Backend OCR request failed:', error);
-      // Fallback to PaddleOCR if available
-      if (this.hasPaddleFallback()) {
-        console.log('[OCRHybridService] Falling back to PaddleOCR');
-        return this.recognizeWithPaddle(canvasEl);
+      // Fallback to Remote OCR if available
+      if (this.hasRemoteFallback()) {
+        console.log('[OCRHybridService] Falling back to Remote OCR');
+        return this.recognizeWithRemote(canvasEl);
       }
       throw error instanceof Error ? error : new Error('Backend OCR request failed');
     }
@@ -422,11 +430,11 @@ export default class OCRHybridService {
   }
 
   /**
-   * Recognize text using external PaddleOCR service
+   * Recognize text using external Remote OCR service
    */
-  async recognizeWithPaddle(canvasEl: HTMLCanvasElement): Promise<OCRResult[]> {
-    if (!this.paddleEndpoint) {
-      console.warn('[OCRHybridService] Paddle OCR endpoint not configured');
+  async recognizeWithRemote(canvasEl: HTMLCanvasElement): Promise<OCRResult[]> {
+    if (!this.remoteEndpoint) {
+      console.warn('[OCRHybridService] Remote OCR endpoint not configured');
       return [];
     }
 
@@ -434,7 +442,7 @@ export default class OCRHybridService {
     const base64 = dataUrl.split(',')[1];
 
     try {
-      const response = await fetch(this.paddleEndpoint, {
+      const response = await fetch(this.remoteEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image_base64: base64 })
@@ -442,7 +450,7 @@ export default class OCRHybridService {
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(`PaddleOCR error: ${response.status} ${text}`);
+        throw new Error(`Remote OCR error: ${response.status} ${text}`);
       }
 
       const { text, confidence } = await response.json() as { text: string; confidence: number };
@@ -452,23 +460,23 @@ export default class OCRHybridService {
       }
 
       const fallbackResult: OCRResult = {
-        id: `paddle_${Date.now()}`,
+        id: `remote_${Date.now()}`,
         text,
         confidence: typeof confidence === 'number' ? confidence : 0.7,
         box: { x: 0, y: 0, width: canvasEl.width, height: canvasEl.height },
         type: 'merged'
       };
 
-      console.log('[OCRHybridService] PaddleOCR result:', fallbackResult);
+      console.log('[OCRHybridService] Remote OCR result:', fallbackResult);
       return [fallbackResult];
     } catch (error) {
-      console.error('[OCRHybridService] PaddleOCR request failed:', error);
-      throw error instanceof Error ? error : new Error('PaddleOCR request failed');
+      console.error('[OCRHybridService] Remote OCR request failed:', error);
+      throw error instanceof Error ? error : new Error('Remote OCR request failed');
     }
   }
 
-  hasPaddleFallback(): boolean {
-    return Boolean(this.paddleEndpoint);
+  hasRemoteFallback(): boolean {
+    return Boolean(this.remoteEndpoint);
   }
 
   /**

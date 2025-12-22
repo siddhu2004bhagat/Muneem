@@ -35,17 +35,23 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1 > /tmp/backend.log 2
 BACKEND_PID=$!
 cd "$SCRIPT_DIR"
 
-# Start PaddleOCR Service (in parallel)
-echo "📸 Starting PaddleOCR service (port 9000)..."
-cd backend/services/paddle_ocr
+# Start TesseractOCR Service (in parallel)
+echo "📸 Starting TesseractOCR service (port 9000)..."
+cd backend/services/tesseract_ocr
 source venv/bin/activate
-uvicorn ocr_service:app --host 0.0.0.0 --port 9000 > /tmp/paddle_ocr.log 2>&1 &
+uvicorn ocr_service:app --host 0.0.0.0 --port 9000 > /tmp/ocr_service.log 2>&1 &
 OCR_PID=$!
 cd "$SCRIPT_DIR"
 
 # Start Frontend (in parallel)
 echo "⚛️  Starting Frontend (port 5173)..."
-npm run dev > /tmp/frontend.log 2>&1 &
+if [[ "$1" == "--prod" ]]; then
+    echo "   Using Production Build (dist/)..."
+    python3 -m http.server 5173 --directory dist > /tmp/frontend.log 2>&1 &
+else
+    echo "   Using Development Server..."
+    npm run dev > /tmp/frontend.log 2>&1 &
+fi
 FRONTEND_PID=$!
 
 # Wait for all services to start (parallel wait)

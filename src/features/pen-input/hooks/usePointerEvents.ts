@@ -70,10 +70,10 @@ export function usePointerEvents(
     
     // Only end stroke if this was the primary drawing pointer
     if (activePointerIdRef.current === e.pointerId) {
-      (e.target as Element).releasePointerCapture(e.pointerId);
-      opts.endStroke();
-      activePointerIdRef.current = null;
-      if (e.pointerType === 'pen') activePenRef.current = false;
+    (e.target as Element).releasePointerCapture(e.pointerId);
+    opts.endStroke();
+    activePointerIdRef.current = null;
+    if (e.pointerType === 'pen') activePenRef.current = false;
     }
     
     // If no more active pointers, reset state

@@ -1,0 +1,14 @@
+[Unit]
+Description=MUNEEM Accounting Backend
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/digi-bahi-ink/backend
+ExecStart=/home/pi/digi-bahi-ink/backend/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

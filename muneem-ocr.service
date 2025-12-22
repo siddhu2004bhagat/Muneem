@@ -1,0 +1,14 @@
+[Unit]
+Description=MUNEEM Tesseract OCR Service
+After=network.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/digi-bahi-ink/backend/services/tesseract_ocr
+ExecStart=/home/pi/digi-bahi-ink/backend/services/tesseract_ocr/venv/bin/uvicorn ocr_service:app --host 0.0.0.0 --port 9000
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

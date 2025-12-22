@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { TemplateId } from '../../types/template.types';
-import { getTemplateThumbnail } from '../../templates/paper-templates-v2';
+import { getTemplateThumbnail } from '../../templates/paper-templates';
 
 interface TemplatePickerProps {
   currentTemplateId: TemplateId;
@@ -61,9 +61,8 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
           return (
             <Card
               key={template.id}
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                isSelected ? 'ring-2 ring-primary' : ''
-              }`}
+              className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''
+                }`}
               onClick={() => handleSelect(template.id)}
             >
               <CardContent className="p-2">

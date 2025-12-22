@@ -167,30 +167,30 @@ const ToolPalette: React.FC<Props> = ({ onUndo, onRedo, onClear, onRecognize, is
         <div className="flex items-center gap-3 min-w-max touch-pan-x">
           <div className="h-6 w-px bg-border mx-1 flex-shrink-0"/>
 
-        {/* Modes: Draw / Shape / OCR */}
+      {/* Modes: Draw / Shape / OCR */}
         <div className="flex gap-2 flex-shrink-0">
           <Button size="default" variant={mode === 'draw' ? 'default' : 'outline'} onClick={() => setMode('draw')} title="Draw" className="touch-manipulation min-w-[44px] min-h-[44px] text-lg">✏️</Button>
           <Button size="default" variant={mode === 'shape' ? 'default' : 'outline'} onClick={() => setMode('shape')} title="Shape Snap" className="touch-manipulation min-w-[44px] min-h-[44px] text-lg">📐</Button>
           <Button size="default" variant={mode === 'ocr' ? 'default' : 'outline'} onClick={() => setMode('ocr')} title="OCR" className="touch-manipulation min-w-[44px] min-h-[44px] text-lg">🔠</Button>
-        </div>
+      </div>
 
         <div className="flex gap-2 flex-shrink-0 items-center">
-          {COLORS.map(c => (
+        {COLORS.map(c => (
             <button key={c} aria-label={`color-${c}`} onClick={() => setColor(c)} className={`w-8 h-8 rounded-full border-2 touch-manipulation ${color === c ? 'ring-2 ring-primary ring-offset-2' : ''}`} style={{ backgroundColor: c }}/>
-          ))}
-        </div>
+        ))}
+      </div>
 
         <div className="h-8 w-px bg-border mx-1 flex-shrink-0"/>
 
         <div className="flex items-center gap-2 min-w-[160px] flex-shrink-0">
           <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Nib</span>
           <Slider value={[width]} min={1} max={12} step={1} onValueChange={([v]) => setWidth(v)} className="w-32 touch-manipulation"/>
-        </div>
+      </div>
 
         <div className="flex items-center gap-2 min-w-[160px] flex-shrink-0">
           <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">Opacity</span>
           <Slider value={[opacity]} min={0.1} max={1} step={0.05} onValueChange={([v]) => setOpacity(v)} className="w-32 touch-manipulation"/>
-        </div>
+      </div>
 
         <div className="h-8 w-px bg-border mx-1 flex-shrink-0"/>
 
@@ -198,46 +198,46 @@ const ToolPalette: React.FC<Props> = ({ onUndo, onRedo, onClear, onRecognize, is
           <Button size="default" variant="outline" onClick={onUndo} title="Undo" className="touch-manipulation min-w-[44px] min-h-[44px]"><Undo2 className="w-5 h-5"/></Button>
           <Button size="default" variant="outline" onClick={onRedo} title="Redo" className="touch-manipulation min-w-[44px] min-h-[44px]"><Redo2 className="w-5 h-5"/></Button>
           <Button size="default" variant="outline" onClick={onClear} title="Clear" className="touch-manipulation min-h-[44px] px-4">Clear</Button>
-        </div>
+      </div>
 
         <div className="h-8 w-px bg-border mx-1 flex-shrink-0"/>
 
-        {/* NEW: Recognize Button (Hybrid OCR) */}
+      {/* NEW: Recognize Button (Hybrid OCR) */}
         <div className="flex flex-col gap-2 flex-shrink-0">
-          <Button 
+        <Button 
             size="default" 
-            variant={isRecognizing ? "default" : "outline"}
-            onClick={onRecognize}
-            disabled={isRecognizing || !onRecognize}
+          variant={isRecognizing ? "default" : "outline"}
+          onClick={onRecognize}
+          disabled={isRecognizing || !onRecognize}
             title="Recognize Handwriting"
             className="gap-2 touch-manipulation min-h-[44px] px-4"
-          >
-            {isRecognizing ? (
-              <>
+        >
+          {isRecognizing ? (
+            <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Recognizing...
-              </>
-            ) : (
-              <>
+              Recognizing...
+            </>
+          ) : (
+            <>
                 <ScanText className="w-5 h-5" />
-                Recognize
-              </>
-            )}
-          </Button>
-          
-          {/* Toggle for correction overlay */}
+              Recognize
+            </>
+          )}
+        </Button>
+        
+        {/* Toggle for correction overlay */}
           <div className="flex items-center gap-2 px-1">
-            <Switch
-              id="show-corrections"
-              checked={showCorrectionsOnRecognize}
-              onCheckedChange={handleToggleCorrections}
+          <Switch
+            id="show-corrections"
+            checked={showCorrectionsOnRecognize}
+            onCheckedChange={handleToggleCorrections}
               className="scale-100"
-            />
+          />
             <Label htmlFor="show-corrections" className="text-sm cursor-pointer whitespace-nowrap touch-manipulation">
-              Show corrections
-            </Label>
-          </div>
+            Show corrections
+          </Label>
         </div>
+      </div>
 
         <div className="h-8 w-px bg-border mx-1 flex-shrink-0"/>
 
@@ -248,13 +248,13 @@ const ToolPalette: React.FC<Props> = ({ onUndo, onRedo, onClear, onRecognize, is
           <Button size="default" variant="outline" title="Sync" onClick={() => document.dispatchEvent(new CustomEvent('muneem:sync'))} className="touch-manipulation min-h-[44px] px-3">Sync</Button>
           <Button size="default" variant="outline" title="Run AI Analysis" onClick={() => document.dispatchEvent(new CustomEvent('muneem:ai-refresh'))} className="touch-manipulation min-w-[44px] min-h-[44px]">
             <BarChart3 className="w-5 h-5" />
-          </Button>
+        </Button>
           <Button size="default" variant="outline" title="Train AI Model" onClick={() => document.dispatchEvent(new CustomEvent('muneem:ai-train'))} className="touch-manipulation min-w-[44px] min-h-[44px]">
             <Brain className="w-5 h-5" />
-          </Button>
+        </Button>
           <Button size="default" variant="outline" title="Sync AI Model" onClick={() => document.dispatchEvent(new CustomEvent('muneem:ai-sync'))} className="touch-manipulation min-w-[44px] min-h-[44px]">
             <Upload className="w-5 h-5" />
-          </Button>
+        </Button>
         </div>
         </div>
       </div>
