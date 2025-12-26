@@ -58,7 +58,7 @@
 | Feature | Description |
 |---------|-------------|
 | **🔐 PIN Authentication** | Secure role-based access control (Owner/Accountant/Employee) |
-| **🖊️ Pen Input Canvas** | Handwriting recognition with OCR support (TensorFlow.js/PaddleOCR) |
+| **🖊️ Pen Input Canvas** | Handwriting recognition with OCR support (TensorFlow.js/Tesseract OCR) |
 | **📖 Digital Ledger** | Professional transaction management with filtering and search |
 | **💰 GST Compliance** | Automatic calculation with official slabs (0%, 5%, 12%, 18%, 28%) |
 | **📝 Transaction Types** | Sales, Purchases, Expenses, Receipts with full audit trail |
@@ -148,14 +148,14 @@ npm run install:all
 - ✅ Installs frontend dependencies (npm packages)
 - ✅ Sets up Python virtual environment
 - ✅ Installs backend dependencies
-- ✅ Optionally installs PaddleOCR service (prompted)
+- ✅ Optionally installs Tesseract OCR service (prompted)
 
 **Expected time:** 10-15 minutes (first time)
 
 ### Start the Application
 
 ```bash
-# Start all services (Frontend, Backend, PaddleOCR)
+# Start all services (Frontend, Backend, Tesseract OCR)
 npm start
 # OR
 ./start.sh
@@ -164,7 +164,7 @@ npm start
 This starts:
 - 🌐 **Frontend** on [http://localhost:5173](http://localhost:5173)
 - 🔧 **Backend API** on [http://localhost:8000](http://localhost:8000)
-- 📝 **PaddleOCR** on [http://localhost:9000](http://localhost:9000)
+- 📝 **Tesseract OCR** on [http://localhost:9000](http://localhost:9000)
 
 ### Stop the Application
 
@@ -214,7 +214,7 @@ pip install -r requirements.txt
 cd ..
 ```
 
-#### Step 4: Setup PaddleOCR Service (Optional)
+#### Step 4: Setup Tesseract OCR Service (Optional)
 
 ```bash
 cd backend/services/paddle_ocr
@@ -359,14 +359,14 @@ To enable WhatsApp features (OTP, invoice sharing):
 - **State Management:** React Hooks + Context API
 - **Database:** Dexie.js (IndexedDB wrapper)
 - **PDF Generation:** jsPDF
-- **OCR:** TensorFlow.js / PaddleOCR
+- **OCR:** TensorFlow.js / Tesseract OCR
 - **Internationalization:** i18next + react-i18next
 
 #### Backend
 - **Framework:** FastAPI (Python)
 - **Database:** SQLite (development) / PostgreSQL (production)
 - **API:** RESTful API with WebSocket support
-- **OCR Service:** PaddleOCR (optional)
+- **OCR Service:** Tesseract OCR (optional)
 - **WhatsApp Integration:** Meta WhatsApp Business API
 
 ### Project Structure
@@ -523,7 +523,7 @@ docker run -p 5173:5173 -p 8000:8000 muneem:latest
 # Find process using port
 lsof -ti:5173  # Frontend
 lsof -ti:8000  # Backend
-lsof -ti:9000  # PaddleOCR
+lsof -ti:9000  # Tesseract OCR
 
 # Kill process
 kill -9 <PID>

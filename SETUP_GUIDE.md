@@ -44,7 +44,7 @@ npm run install:all
 - ✅ Checks prerequisites (Node.js, Python)
 - ✅ Installs frontend dependencies (npm)
 - ✅ Sets up backend virtual environment and dependencies
-- ✅ Optionally installs PaddleOCR (you'll be prompted)
+- ✅ Optionally installs Tesseract OCR (you'll be prompted)
 
 **Expected time:** 10-15 minutes (first time)
 
@@ -95,7 +95,7 @@ cd ..
 
 ---
 
-### 4. Setup PaddleOCR (Optional - for OCR features)
+### 4. Setup Tesseract OCR (Optional - for OCR features)
 
 ```bash
 cd backend/services/paddle_ocr
@@ -164,7 +164,7 @@ cd backend
 source venv/bin/activate
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 
-# Terminal 2: PaddleOCR (optional)
+# Terminal 2: Tesseract OCR (optional)
 cd backend/services/paddle_ocr
 source venv/bin/activate
 uvicorn ocr_service:app --host 0.0.0.0 --port 9000
@@ -177,7 +177,7 @@ npm run dev
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:8000
 - API Docs: http://localhost:8000/docs
-- PaddleOCR: http://localhost:9000
+- Tesseract OCR: http://localhost:9000
 
 ---
 
@@ -284,7 +284,7 @@ Open http://localhost:5173 in browser - should see MUNEEM login page
 ### 3. Check OCR (if installed)
 ```bash
 curl http://localhost:9000/health
-# Should return: {"status":"healthy","service":"PaddleOCR"}
+# Should return: {"status":"healthy","service":"Tesseract OCR"}
 ```
 
 ---

@@ -30,7 +30,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
   const [pageSize, setPageSize] = useState(50);
   const [total, setTotal] = useState<number | undefined>(undefined);
   const [hasNext, setHasNext] = useState(false);
-  
+
   // Filter state
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -39,9 +39,9 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
     to: '',
     tags: '',
   });
-  
+
   const [refreshLedger, setRefreshLedger] = useState(0);
-  
+
   // Get selected format from localStorage
   const selectedFormatId = (localStorage.getItem('muneem_format') || 'traditional-khata') as LedgerFormatId;
   const format = getFormatById(selectedFormatId);
@@ -114,11 +114,11 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
     setPage(0);
   };
 
-  const hasActiveFilters = 
-    filters.search || 
-    filters.type || 
-    filters.from || 
-    filters.to || 
+  const hasActiveFilters =
+    filters.search ||
+    filters.type ||
+    filters.from ||
+    filters.to ||
     filters.tags;
 
   /**
@@ -145,13 +145,13 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
     const totalDebit = entries
       .filter(e => e.type === 'purchase' || e.type === 'expense')
       .reduce((sum, e) => sum + e.amount + e.gstAmount, 0);
-    
+
     const totalCredit = entries
       .filter(e => e.type === 'sale' || e.type === 'receipt')
       .reduce((sum, e) => sum + e.amount + e.gstAmount, 0);
-    
+
     const net = totalCredit - totalDebit;
-    
+
     return { totalDebit, totalCredit, net };
   };
 
@@ -228,12 +228,12 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
       const runningBalances = calculateRunningBalance(entries);
       const csvContent = generateCSV(entries, runningBalances);
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      
+
       // Generate filename
       const fromStr = filters.from || 'all';
       const toStr = filters.to || 'all';
       const filename = `ledger_${fromStr}_${toStr}_${Date.now()}.csv`;
-      
+
       saveAs(blob, filename);
       toast.success('CSV exported successfully');
     } catch (error: any) {
@@ -246,28 +246,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
    * Handle Print
    */
   const handlePrint = () => {
-    try {
-      // Show print container
-      const printContainer = document.getElementById('print-container');
-      if (!printContainer) {
-        toast.error('Print container not found');
-        return;
-      }
-
-      // Temporarily show print container
-      printContainer.style.display = 'block';
-      
-      // Trigger print
-      window.print();
-      
-      // Hide print container after print
-      setTimeout(() => {
-        printContainer.style.display = 'none';
-      }, 100);
-    } catch (error: any) {
-      console.error('Print failed:', error);
-      toast.error('Failed to print: ' + (error.message || 'Unknown error'));
-    }
+    window.print();
   };
 
   /**
@@ -285,7 +264,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
 
   async function handleDelete(id: number | undefined) {
     if (!id) return;
-    
+
     if (confirm('Delete this entry?')) {
       try {
         const datasource = getLedgerDataSource();
@@ -315,7 +294,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
   // Render table based on format
   const renderFormatTable = () => {
     if (!format) return renderDefaultTable();
-    
+
     switch (format.id) {
       case 'cash-book':
         return renderCashBookTable();
@@ -331,7 +310,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
   const renderTraditionalTable = () => {
     const runningBalances = calculateRunningBalance(entries);
     const totals = calculateTotals();
-    
+
     return (
       <div className="border rounded-lg shadow-md overflow-hidden bg-[#fefce8]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
         <Table>
@@ -349,7 +328,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
             {entries.map((entry, idx) => {
               const balance = runningBalances[idx];
               const isPositive = balance >= 0;
-              
+
               return (
                 <TableRow key={entry.id} className="border-b border-amber-100 hover:bg-amber-50/50">
                   <TableCell className="font-mono">{formatDate(entry.date)}</TableCell>
@@ -375,19 +354,19 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex gap-1 justify-end">
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         className="h-7 w-7 p-0"
                         onClick={() => onEditEntry?.(entry)}
                         title="Edit entry"
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => handleDelete(entry.id)} 
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDelete(entry.id)}
                         className="h-7 w-7 p-0 text-destructive"
                         title="Delete entry"
                       >
@@ -428,7 +407,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
     const totalIn = entries.filter(e => e.type === 'sale' || e.type === 'receipt').reduce((sum, e) => sum + e.amount + e.gstAmount, 0);
     const totalOut = entries.filter(e => e.type === 'purchase' || e.type === 'expense').reduce((sum, e) => sum + e.amount + e.gstAmount, 0);
     const runningBalances = calculateRunningBalance(entries);
-    
+
     // Group entries by date
     const groupedByDate = entries.reduce((acc, entry, idx) => {
       const date = entry.date;
@@ -438,9 +417,9 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
       acc[date].push({ entry, balance: runningBalances[idx] });
       return acc;
     }, {} as Record<string, Array<{ entry: LedgerEntry; balance: number }>>);
-    
+
     const sortedDates = Object.keys(groupedByDate).sort();
-    
+
     return (
       <div className="border rounded-lg shadow-md overflow-hidden bg-[#fffbeb]">
         <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-4 border-b-2 border-orange-200">
@@ -466,7 +445,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
               const dayTotalOut = dayEntries
                 .filter(e => e.entry.type === 'purchase' || e.entry.type === 'expense')
                 .reduce((sum, e) => sum + e.entry.amount + e.entry.gstAmount, 0);
-              
+
               return (
                 <>
                   {dayEntries.map(({ entry, balance }) => (
@@ -503,7 +482,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
 
   const renderDoubleEntryTable = () => {
     const totals = calculateTotals();
-    
+
     return (
       <div className="border rounded-lg shadow-md overflow-hidden bg-[#f0fdf4]">
         <Table>
@@ -517,7 +496,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
           <TableBody>
             {entries.map(entry => (
               <TableRow key={entry.id} className="border-b border-green-100">
-                <TableCell className="font-mono">{formatDate(entry.date)}<br/><span className="text-xs text-gray-500">{entry.description}</span></TableCell>
+                <TableCell className="font-mono">{formatDate(entry.date)}<br /><span className="text-xs text-gray-500">{entry.description}</span></TableCell>
                 <TableCell className="text-right text-green-700 font-semibold">
                   {(entry.type === 'sale' || entry.type === 'receipt') ? formatCurrency(entry.amount + entry.gstAmount) : '-'}
                 </TableCell>
@@ -547,7 +526,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
     // Filter entries to only show sale/receipt types for party ledger
     const partyEntries = entries.filter(e => e.type === 'sale' || e.type === 'receipt');
     const runningBalances = calculateRunningBalance(partyEntries);
-    
+
     // Calculate opening balance if date filter is active
     let openingBalance = 0;
     let showOpeningBalance = false;
@@ -558,7 +537,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
       openingBalance = 0; // Would need to fetch pre-filter entries
       showOpeningBalance = true;
     }
-    
+
     // Calculate totals for party ledger
     const totalGiven = partyEntries
       .filter(e => e.type === 'sale')
@@ -567,7 +546,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
       .filter(e => e.type === 'receipt')
       .reduce((sum, e) => sum + e.amount + e.gstAmount, 0);
     const finalBalance = runningBalances[runningBalances.length - 1] || 0;
-    
+
     return (
       <div className="space-y-2">
         {/* Opening Balance Display */}
@@ -583,62 +562,62 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
             ⚠️ Partial balance (page scope only)
           </div>
         )}
-        
+
         <div className="border rounded-lg shadow-md overflow-hidden bg-[#f0f9ff]">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b-2 border-blue-200">
-              <TableHead className="font-bold text-gray-800">Date</TableHead>
-              <TableHead className="font-bold text-gray-800">Party Name</TableHead>
-              <TableHead className="font-bold text-gray-800 text-right">Given (Sale)</TableHead>
-              <TableHead className="font-bold text-gray-800 text-right">Received (Payment)</TableHead>
-              <TableHead className="font-bold text-gray-800 text-right">Balance</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {partyEntries.map((entry, idx) => {
-              const balance = runningBalances[idx];
-              const isDue = balance > 0;
-              
-              return (
-                <TableRow key={entry.id} className="border-b border-blue-100">
-                  <TableCell className="font-mono">{formatDate(entry.date)}</TableCell>
-                  <TableCell className="font-medium">
-                    {entry.party_name ? (
-                      <button
-                        onClick={() => handlePartyClick(entry.party_name || '')}
-                        className="hover:underline text-primary cursor-pointer"
-                        title="Filter by this party"
-                      >
-                        {entry.party_name}
-                      </button>
-                    ) : (
-                      '-'
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-orange-600 font-semibold">
-                    {entry.type === 'sale' ? formatCurrency(entry.amount + entry.gstAmount) : '-'}
-                  </TableCell>
-                  <TableCell className="text-right text-green-600 font-semibold">
-                    {entry.type === 'receipt' ? formatCurrency(entry.amount + entry.gstAmount) : '-'}
-                  </TableCell>
-                  <TableCell className={`text-right font-bold ${isDue ? 'text-orange-600' : 'text-green-600'}`}>
-                    {formatCurrency(Math.abs(balance))} {isDue ? '(Due)' : '(Advance)'}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-            {/* Totals Row */}
-            <TableRow className="bg-blue-100 font-bold border-t-2 border-blue-300">
-              <TableCell colSpan={2} className="text-right">Totals:</TableCell>
-              <TableCell className="text-right text-orange-600">{formatCurrency(totalGiven)}</TableCell>
-              <TableCell className="text-right text-green-600">{formatCurrency(totalReceived)}</TableCell>
-              <TableCell className={`text-right font-bold ${finalBalance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
-                {formatCurrency(Math.abs(finalBalance))} {finalBalance > 0 ? '(Due)' : '(Advance)'}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b-2 border-blue-200">
+                <TableHead className="font-bold text-gray-800">Date</TableHead>
+                <TableHead className="font-bold text-gray-800">Party Name</TableHead>
+                <TableHead className="font-bold text-gray-800 text-right">Given (Sale)</TableHead>
+                <TableHead className="font-bold text-gray-800 text-right">Received (Payment)</TableHead>
+                <TableHead className="font-bold text-gray-800 text-right">Balance</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {partyEntries.map((entry, idx) => {
+                const balance = runningBalances[idx];
+                const isDue = balance > 0;
+
+                return (
+                  <TableRow key={entry.id} className="border-b border-blue-100">
+                    <TableCell className="font-mono">{formatDate(entry.date)}</TableCell>
+                    <TableCell className="font-medium">
+                      {entry.party_name ? (
+                        <button
+                          onClick={() => handlePartyClick(entry.party_name || '')}
+                          className="hover:underline text-primary cursor-pointer"
+                          title="Filter by this party"
+                        >
+                          {entry.party_name}
+                        </button>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-orange-600 font-semibold">
+                      {entry.type === 'sale' ? formatCurrency(entry.amount + entry.gstAmount) : '-'}
+                    </TableCell>
+                    <TableCell className="text-right text-green-600 font-semibold">
+                      {entry.type === 'receipt' ? formatCurrency(entry.amount + entry.gstAmount) : '-'}
+                    </TableCell>
+                    <TableCell className={`text-right font-bold ${isDue ? 'text-orange-600' : 'text-green-600'}`}>
+                      {formatCurrency(Math.abs(balance))} {isDue ? '(Due)' : '(Advance)'}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {/* Totals Row */}
+              <TableRow className="bg-blue-100 font-bold border-t-2 border-blue-300">
+                <TableCell colSpan={2} className="text-right">Totals:</TableCell>
+                <TableCell className="text-right text-orange-600">{formatCurrency(totalGiven)}</TableCell>
+                <TableCell className="text-right text-green-600">{formatCurrency(totalReceived)}</TableCell>
+                <TableCell className={`text-right font-bold ${finalBalance > 0 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {formatCurrency(Math.abs(finalBalance))} {finalBalance > 0 ? '(Due)' : '(Advance)'}
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </div>
       </div>
     );
@@ -663,8 +642,8 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
           )}
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={handleExportCSV} 
+          <Button
+            onClick={handleExportCSV}
             variant="outline"
             disabled={loading || entries.length === 0}
             className="touch-friendly"
@@ -673,8 +652,8 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
             <Download className="w-4 h-4 mr-2" />
             Export CSV
           </Button>
-          <Button 
-            onClick={handlePrint} 
+          <Button
+            onClick={handlePrint}
             variant="outline"
             disabled={loading || entries.length === 0}
             className="touch-friendly"
@@ -684,8 +663,8 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
             Print
           </Button>
           {onQuickPenEntry && (
-            <Button 
-              onClick={onQuickPenEntry} 
+            <Button
+              onClick={onQuickPenEntry}
               className="gradient-hero touch-friendly hover-glow hover-scale"
               title="Quick entry using pen input (recommended)"
             >
@@ -756,7 +735,7 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
       {!loading && !error && entries.length > 0 && (
         <>
           {renderFormatTable()}
-          
+
           {/* Pagination Controls */}
           <PaginationControls
             page={page}
@@ -769,8 +748,8 @@ export function LedgerTable({ onAddEntry, onEditEntry, onQuickPenEntry, refresh 
         </>
       )}
 
-      {/* Print Container (Hidden by default, shown only when printing) */}
-      <div id="print-container" style={{ display: 'none' }} className="print-container">
+      {/* Print Container (Hidden by default via CSS, shown only when printing) */}
+      <div className="print-container">
         <div className="print-header">
           <h1 className="print-title">Ledger Report</h1>
           <div className="print-meta">

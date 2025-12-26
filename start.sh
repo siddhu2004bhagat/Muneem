@@ -38,7 +38,14 @@ cd "$SCRIPT_DIR"
 # Start TesseractOCR Service (in parallel)
 echo "📸 Starting TesseractOCR service (port 9000)..."
 cd backend/services/tesseract_ocr
-source venv/bin/activate
+if [ ! -d "venv" ]; then
+    echo "⚠️  OCR Service venv not found. Creating..."
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -q -r requirements.txt
+else
+    source venv/bin/activate
+fi
 uvicorn ocr_service:app --host 0.0.0.0 --port 9000 > /tmp/ocr_service.log 2>&1 &
 OCR_PID=$!
 cd "$SCRIPT_DIR"
@@ -73,11 +80,11 @@ else
     echo "⏳ Backend API: Starting..."
 fi
 
-# Check PaddleOCR
+# Check Tesseract OCR
 if curl -s http://localhost:9000/health 2>/dev/null | grep -q "healthy"; then
-    echo "✅ PaddleOCR: http://localhost:9000 - Ready"
+    echo "✅ Tesseract OCR: http://localhost:9000 - Ready"
 else
-    echo "⏳ PaddleOCR: Starting..."
+    echo "⏳ Tesseract OCR: Starting..."
 fi
 
 # Check Frontend
@@ -96,13 +103,13 @@ echo ""
 echo "   Local Access:"
 echo "   - Frontend: http://localhost:5173"
 echo "   - Backend API: http://localhost:8000"
-echo "   - PaddleOCR: http://localhost:9000"
+echo "   - Tesseract OCR: http://localhost:9000"
 echo ""
 if [ "$LAN_IP" != "localhost" ]; then
   echo "   LAN Access (for other devices):"
   echo "   - Frontend: http://$LAN_IP:5173"
   echo "   - Backend API: http://$LAN_IP:8000"
-  echo "   - PaddleOCR: http://$LAN_IP:9000"
+  echo "   - Tesseract OCR: http://$LAN_IP:9000"
   echo ""
 fi
 echo "✅ Startup complete! Services running in background."

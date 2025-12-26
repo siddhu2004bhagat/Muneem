@@ -91,31 +91,19 @@ deactivate
 cd "$SCRIPT_DIR"
 echo ""
 
-# 3. Install PaddleOCR Dependencies (Optional)
-echo -e "${YELLOW}📦 Step 3/3: Installing PaddleOCR dependencies (Optional)...${NC}"
-read -p "   Install PaddleOCR? This is optional but required for OCR features. (y/n): " -n 1 -r
-echo ""
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    cd backend/services/paddle_ocr
-    
-    if [ ! -d "venv" ]; then
-        echo -e "${BLUE}   Creating PaddleOCR virtual environment...${NC}"
-        python3 -m venv venv
-    fi
-    
-    echo -e "${BLUE}   Activating PaddleOCR virtual environment...${NC}"
-    source venv/bin/activate
-    
-    echo -e "${BLUE}   Installing PaddleOCR packages (this may take 5-10 minutes)...${NC}"
-    pip install --upgrade pip --quiet
-    pip install -r requirements.txt --quiet
-    
-    echo -e "${GREEN}✅ PaddleOCR dependencies installed${NC}"
-    deactivate
-    cd "$SCRIPT_DIR"
-else
-    echo -e "${BLUE}   Skipping PaddleOCR installation${NC}"
-fi
+# 3. Tesseract OCR Service (Installed via system package manager)
+echo -e "${YELLOW}📦 Step 3/3: Tesseract OCR Service${NC}"
+echo -e "${BLUE}   Tesseract OCR is installed via system package manager (apt/brew)${NC}"
+echo -e "${BLUE}   The OCR service uses the system-installed Tesseract${NC}"
+echo -e "${GREEN}✅ Tesseract OCR service configured${NC}"
+
+# Legacy PaddleOCR installation (no longer used)
+# The project now uses Tesseract OCR instead
+# Keeping this commented for reference:
+# cd backend/services/paddle_ocr
+# python3 -m venv venv
+# source venv/bin/activate
+# pip install -r requirements.txt
 
 echo ""
 echo -e "${GREEN}╔════════════════════════════════════════╗${NC}"

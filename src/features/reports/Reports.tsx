@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { db, LedgerEntry } from '@/lib/db';
 import { formatCurrency, formatDate } from '@/lib/gst';
 import { toast } from 'sonner';
-import { FileText, Download } from 'lucide-react';
+import { FileText, Download, Printer } from 'lucide-react';
 import { saveAs } from 'file-saver';
 
 // Lazy-load jsPDF (which includes html2canvas) to reduce main bundle
@@ -47,7 +47,7 @@ export function Reports() {
     const jsPDF = await loadJsPDF();
     const doc = new jsPDF();
     const totals = calculateTotals();
-    
+
     // Header
     doc.setFontSize(20);
     doc.text('MUNEEM', 105, 20, { align: 'center' });
@@ -62,7 +62,7 @@ export function Reports() {
       doc.setFontSize(16);
       doc.text('Profit & Loss Statement', 20, yPos);
       yPos += 10;
-      
+
       doc.setFontSize(11);
       doc.text(`Period: ${new Date().toLocaleDateString('en-IN')}`, 20, yPos);
       yPos += 15;
@@ -101,7 +101,7 @@ export function Reports() {
       doc.setFontSize(16);
       doc.text('GST Report', 20, yPos);
       yPos += 10;
-      
+
       doc.setFontSize(11);
       doc.text(`Period: ${new Date().toLocaleDateString('en-IN')}`, 20, yPos);
       yPos += 15;
@@ -136,7 +136,7 @@ export function Reports() {
       doc.setFontSize(16);
       doc.text('Ledger Summary', 20, yPos);
       yPos += 10;
-      
+
       doc.setFontSize(11);
       doc.text(`Total Entries: ${entries.length}`, 20, yPos);
       yPos += 15;
@@ -185,6 +185,20 @@ export function Reports() {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
     saveAs(blob, `ledger_${Date.now()}.csv`);
     toast.success('Ledger exported to CSV');
+  };
+
+  const printReceipt = (id: number) => {
+    // Open in a small popup window for thermal printing
+    const width = 400;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+
+    window.open(
+      `/#/print/receipt/${id}?autoprint=true`,
+      'ReceiptPrint',
+      `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+    );
   };
 
   if (loading) {
@@ -250,15 +264,41 @@ export function Reports() {
               </div>
               <h3 className="text-lg font-bold">Ledger Summary</h3>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Complete ledger entries with transaction details and GST breakdown
-            </p>
+
+            <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2">
+              <p className="text-xs text-muted-foreground font-medium sticky top-0 bg-white/95 backdrop-blur z-10 pb-2 border-b">
+                Recent Transactions
+              </p>
+              {entries.slice(0, 10).map((entry) => (
+                <div key={entry.id} className="flex justify-between items-center text-sm p-2 hover:bg-muted/50 rounded-md group">
+                  <div className="flex flex-col">
+                    <span className="font-medium text-xs">{formatDate(entry.date)}</span>
+                    <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{entry.description}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-xs">
+                      {formatCurrency(entry.amount + entry.gstAmount)}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => entry.id && printReceipt(entry.id)}
+                      title="Print Thermal Receipt"
+                    >
+                      <Printer className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <Button
               onClick={() => exportPDF('ledger')}
-              className="w-full gradient-hero touch-friendly hover-glow hover-scale"
+              className="w-full gradient-hero touch-friendly hover-glow hover-scale mt-2"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export Ledger (PDF)
+              Export Full Ledger (PDF)
             </Button>
           </div>
         </Card>

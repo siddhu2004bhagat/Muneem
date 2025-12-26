@@ -3,6 +3,11 @@
  * A4-friendly layout with clean formatting
  */
 
+/* Hide print container by default on screen */
+.print-container {
+  display: none !important;
+}
+
 @media print {
   /* Hide everything by default */
   body * {
@@ -13,6 +18,7 @@
   .print-container,
   .print-container * {
     visibility: visible;
+    display: block !important;
   }
   
   .print-container {

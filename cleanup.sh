@@ -64,32 +64,9 @@ else
 fi
 echo ""
 
-# Step 3: Remove 'haven't' directory (failed venv installation)
-echo "Step 3: Removing failed venv installation"
-HAVENT_DIR="backend/services/paddle_ocr/haven't"
-if [ -d "$HAVENT_DIR" ]; then
-    SIZE=$(du -sh "$HAVENT_DIR" | cut -f1)
-    echo "Directory: $HAVENT_DIR (Size: $SIZE)"
-    echo "This appears to be a failed/incomplete virtual environment installation"
-    read -p "Remove this directory? (y/n) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        rm -rf "$HAVENT_DIR"
-        echo -e "${GREEN}✓ 'haven't' directory removed${NC}"
-        
-        # Verify venv still works
-        echo "Verifying active venv..."
-        cd backend/services/paddle_ocr
-        source venv/bin/activate
-        python -c "import paddleocr; print('✓ Active venv still works')" || {
-            echo -e "${RED}✗ Active venv broken! Restore from backup!${NC}"
-            exit 1
-        }
-        cd ../../..
-    fi
-else
-    echo "'haven't' directory not found, skipping"
-fi
+# Step 3: Legacy PaddleOCR cleanup (no longer applicable)
+echo "Step 3: Skipping legacy PaddleOCR cleanup"
+echo "The project now uses Tesseract OCR (system-installed)"
 echo ""
 
 # Step 4: Remove __pycache__ directories (regenerated automatically)
