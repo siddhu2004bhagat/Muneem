@@ -5,7 +5,7 @@ import { Dashboard } from '@/components/layout/Dashboard';
 import { LedgerTable } from '@/components/layout/LedgerTable';
 import { EntryForm } from '@/components/forms/EntryForm';
 import { InsightsDashboard } from '@/features/ai-analytics';
-import { LearningPanel } from '@/features/ai-learning';
+import { LearningPanel, useLearningSync } from '@/features/ai-learning';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Lazy load entire pen input wrapper to prevent ANY module evaluation on app start
@@ -66,6 +66,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedFormat, setSelectedFormat] = useState<LedgerFormatId>('traditional-khata');
   const restoreInputRef = useRef<HTMLInputElement>(null);
+  const learning = useLearningSync();
 
   // Keyboard Shortcuts
   useHotkeys('alt+n, f2', (e) => {
@@ -134,13 +135,14 @@ const Index = () => {
         toast.error('Sync failed');
       }
     };
-    document.addEventListener('muneem:backup' as any, onBackup);
-    document.addEventListener('muneem:restore' as any, onRestore);
-    document.addEventListener('muneem:sync' as any, onSync);
+
+    document.addEventListener('muneem:backup', onBackup);
+    document.addEventListener('muneem:restore', onRestore);
+    document.addEventListener('muneem:sync', onSync);
     return () => {
-      document.removeEventListener('muneem:backup' as any, onBackup);
-      document.removeEventListener('muneem:restore' as any, onRestore);
-      document.removeEventListener('muneem:sync' as any, onSync);
+      document.removeEventListener('muneem:backup', onBackup);
+      document.removeEventListener('muneem:restore', onRestore);
+      document.removeEventListener('muneem:sync', onSync);
     };
   }, []);
 
@@ -300,7 +302,12 @@ const Index = () => {
                 </TabsContent>
 
                 <TabsContent value="ai-learning">
-                  <LearningPanel />
+                  <LearningPanel
+                    trainingProgress={learning.trainingProgress}
+                    syncStatus={learning.syncStatus}
+                    onTrainLocally={learning.trainLocally}
+                    onSyncModel={learning.syncModel}
+                  />
                 </TabsContent>
               </>
             )}

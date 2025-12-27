@@ -83,8 +83,6 @@ export function EntryForm({ entry, onSuccess, onCancel }: EntryFormProps) {
         setInlinePenTarget(custom.detail.targetField);
       }
     };
-    window.addEventListener('muneem:open-pen-input' as any, handleQuickPenEntry as any);
-    return () => window.removeEventListener('muneem:open-pen-input' as any, handleQuickPenEntry as any);
   }, []);
 
   // Load party name suggestions from previous entries
@@ -185,8 +183,9 @@ export function EntryForm({ entry, onSuccess, onCancel }: EntryFormProps) {
         toast.success('Entry added successfully!');
       }
       onSuccess();
-    } catch (error: any) {
-      toast.error(error.message || `Failed to ${isEditMode ? 'update' : 'add'} entry`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(msg || `Failed to ${isEditMode ? 'update' : 'add'} entry`);
     } finally {
       setLoading(false);
     }
