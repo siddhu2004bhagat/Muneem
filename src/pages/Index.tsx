@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import React from 'react';
+import { useHotkeys } from 'react-hotkeys-hook';
 import { Dashboard } from '@/components/layout/Dashboard';
 import { LedgerTable } from '@/components/layout/LedgerTable';
 import { EntryForm } from '@/components/forms/EntryForm';
@@ -12,16 +13,16 @@ const PenInputWrapper = lazy(() => import('@/features/pen-input/PenInputWrapper'
 
 // Lazy load PDF-heavy components to reduce main bundle size
 // These components contain jsPDF and html2canvas dependencies
-const Reports = lazy(() => 
+const Reports = lazy(() =>
   import('@/features/reports/Reports').then(m => ({ default: m.Reports }))
 );
-const UPIIntegration = lazy(() => 
+const UPIIntegration = lazy(() =>
   import('@/features/payments/UPIIntegration').then(m => ({ default: m.UPIIntegration }))
 );
-const WhatsAppShare = lazy(() => 
+const WhatsAppShare = lazy(() =>
   import('@/features/payments/WhatsAppShare').then(m => ({ default: m.WhatsAppShare }))
 );
-const Settings = lazy(() => 
+const Settings = lazy(() =>
   import('@/features/settings/Settings').then(m => ({ default: m.Settings }))
 );
 
@@ -66,9 +67,23 @@ const Index = () => {
   const [selectedFormat, setSelectedFormat] = useState<LedgerFormatId>('traditional-khata');
   const restoreInputRef = useRef<HTMLInputElement>(null);
 
+  // Keyboard Shortcuts
+  useHotkeys('alt+n, f2', (e) => {
+    e.preventDefault();
+    setEditingEntry(undefined);
+    setShowEntryForm(true);
+  }, { enableOnFormTags: true });
+
+  useHotkeys('esc', () => {
+    if (showEntryForm) {
+      setShowEntryForm(false);
+      setEditingEntry(undefined);
+    }
+  }, { enableOnFormTags: true }, [showEntryForm]);
+
   useEffect(() => {
     initializeDB();
-    
+
     // Load saved format preference
     const savedFormat = localStorage.getItem('muneem_format') as LedgerFormatId;
     if (savedFormat) {
@@ -146,7 +161,7 @@ const Index = () => {
   // Auto-sync when coming online
   useEffect(() => {
     if (online) {
-      flush({ onSyncComplete: (n) => { if (n>0) toast.success(`Auto-sync complete (${n})`); } });
+      flush({ onSyncComplete: (n) => { if (n > 0) toast.success(`Auto-sync complete (${n})`); } });
     }
   }, [online]);
 
@@ -162,9 +177,9 @@ const Index = () => {
           <ErrorBoundary fallback={<div className="p-6 border rounded-lg bg-card"><p className="text-destructive">⚠️ Pen input failed to load</p><Button onClick={() => setShowPenCanvas(false)} variant="outline">Back to Dashboard</Button></div>}>
             <Suspense fallback={<div className="p-6 text-center">🕓 Initializing pen input...</div>}>
               <PenInputWrapper
-            onRecognized={handlePenRecognized}
-            onClose={() => setShowPenCanvas(false)}
-          />
+                onRecognized={handlePenRecognized}
+                onClose={() => setShowPenCanvas(false)}
+              />
             </Suspense>
           </ErrorBoundary>
         ) : showEntryForm ? (
@@ -210,10 +225,10 @@ const Index = () => {
                   </>
                 )}
                 {ENABLE_UPI && (
-                <TabsTrigger value="upi" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  UPI
-                </TabsTrigger>
+                  <TabsTrigger value="upi" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    UPI
+                  </TabsTrigger>
                 )}
                 {ENABLE_GST_REPORTS && (
                   <TabsTrigger value="gst-reports" className="touch-friendly px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-white transition-smooth rounded-md">
@@ -274,7 +289,7 @@ const Index = () => {
 
             <TabsContent value="reports">
               <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Reports...</div>}>
-              <Reports />
+                <Reports />
               </Suspense>
             </TabsContent>
 
@@ -291,9 +306,9 @@ const Index = () => {
             )}
 
             {ENABLE_UPI && (
-            <TabsContent value="upi">
+              <TabsContent value="upi">
                 <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading UPI Integration...</div>}>
-              <UPIIntegration />
+                  <UPIIntegration />
                 </Suspense>
               </TabsContent>
             )}
@@ -311,12 +326,12 @@ const Index = () => {
                 <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading Inventory...</div>}>
                   <InventoryPage />
                 </Suspense>
-            </TabsContent>
+              </TabsContent>
             )}
 
             <TabsContent value="whatsapp">
               <Suspense fallback={<div className="p-6 text-center animate-pulse">🔄 Loading WhatsApp Share...</div>}>
-              <WhatsAppShare />
+                <WhatsAppShare />
               </Suspense>
             </TabsContent>
 
@@ -335,9 +350,9 @@ const Index = () => {
           <div className="flex flex-col items-center justify-center gap-4 text-center">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
-                <img 
-                  src="/1.png" 
-                  alt="MUNEEM Logo" 
+                <img
+                  src="/1.png"
+                  alt="MUNEEM Logo"
                   className="w-full h-full object-contain"
                 />
               </div>

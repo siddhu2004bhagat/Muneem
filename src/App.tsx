@@ -9,7 +9,21 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { ReceiptView } from "@/features/reports/receipt/ReceiptView";
 
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  useGlobalShortcuts();
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/print/receipt/:id" element={<ReceiptView />} />
+      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -18,12 +32,7 @@ const App = () => (
       <Sonner />
       <ErrorBoundary>
         <HashRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/print/receipt/:id" element={<ReceiptView />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </HashRouter>
       </ErrorBoundary>
     </TooltipProvider>
