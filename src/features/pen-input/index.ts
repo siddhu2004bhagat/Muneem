@@ -14,3 +14,11 @@ export { getPaperTemplate, PAPER_TEMPLATES } from './templates/paper-templates';
 export type { PenCanvasProps } from './types/pen.types';
 export type { PaperTemplate } from './templates/paper-templates';
 export type { NotebookPage } from '@/lib/localStore';
+
+// Palm Rejection (for advanced configuration)
+export { usePalmRejection } from './hooks/usePalmRejection';
+export type { PalmRejectionConfig } from './hooks/usePalmRejection';
+export type { PointerEventsConfig } from './hooks/usePointerEvents';
+
+// Development utilities (calibration tool)
+export { PalmRejectionCalibrator } from './utils/palmCalibrator';

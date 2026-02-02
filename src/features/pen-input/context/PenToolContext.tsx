@@ -7,11 +7,13 @@ interface PenToolState {
   width: number; // nib size
   opacity: number;
   mode: 'draw' | 'shape' | 'ocr';
+  eraserMode: 'pixel' | 'object';
   setTool: (t: DrawingTool) => void;
   setColor: (c: string) => void;
   setWidth: (w: number) => void;
   setOpacity: (o: number) => void;
   setMode: (m: 'draw' | 'shape' | 'ocr') => void;
+  setEraserMode: (m: 'pixel' | 'object') => void;
 }
 
 const PenToolContext = createContext<PenToolState | null>(null);
@@ -22,6 +24,7 @@ export const PenToolProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [width, setWidth] = useState<number>(1.5); // Thinner default for natural pen feel
   const [opacity, setOpacity] = useState<number>(1);
   const [mode, setMode] = useState<'draw' | 'shape' | 'ocr'>('draw');
+  const [eraserMode, setEraserMode] = useState<'pixel' | 'object'>('pixel');
 
   // Enhanced setTool with logging and validation
   const handleSetTool = useCallback((newTool: DrawingTool) => {
@@ -29,19 +32,21 @@ export const PenToolProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTool(newTool);
   }, [tool]);
 
-  const value = useMemo(() => ({ 
-    tool, 
-    color, 
-    width, 
-    opacity, 
-    mode, 
-    setTool: handleSetTool, 
-    setColor, 
-    setWidth, 
-    setOpacity, 
-    setMode 
-  }), [tool, color, width, opacity, mode, handleSetTool]);
-  
+  const value = useMemo(() => ({
+    tool,
+    color,
+    width,
+    opacity,
+    mode,
+    eraserMode,
+    setTool: handleSetTool,
+    setColor,
+    setWidth,
+    setOpacity,
+    setMode,
+    setEraserMode
+  }), [tool, color, width, opacity, mode, eraserMode, handleSetTool]);
+
   return <PenToolContext.Provider value={value}>{children}</PenToolContext.Provider>;
 };
 
@@ -52,5 +57,3 @@ export function usePenTool() {
 }
 
 export default PenToolContext;
-
-

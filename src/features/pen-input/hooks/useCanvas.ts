@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StrokeEngine } from '../services/strokeEngine';
 import History, { Command } from '../services/history.service';
-import { saveStroke, loadAll } from '@/lib/localStore';
+import { saveStroke, loadAll, deleteStroke } from '@/lib/localStore';
 import type { Stroke, StrokePoint } from '../types/pen.types';
 import type { CanvasConfig } from '../types/canvas.types';
 import { usePenTool } from '../context/PenToolContext';
@@ -9,6 +9,7 @@ import { getPaperTemplate } from '../templates/paper-templates';
 import { LedgerFormatId } from '@/features/ledger-formats';
 import { createPencilPattern } from '../services/texture.service';
 import { CanvasService } from '@/services/canvas.service';
+import { GeometryService } from '../services/geometry.service';
 
 const DPR = () => window.devicePixelRatio || 1;
 
@@ -19,7 +20,7 @@ export function useCanvas() {
 
   const historyRef = useRef(new History());
 
-  const { tool, color, width, opacity } = usePenTool();
+  const { tool, color, width, opacity, eraserMode } = usePenTool();
 
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const currentStrokeRef = useRef<Stroke | null>(null);
@@ -34,7 +35,7 @@ export function useCanvas() {
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const lastProcessedTimeRef = useRef<number>(0);
   const pendingPointsRef = useRef<StrokePoint[]>([]);
-  
+
   // Performance optimization: minimum time between point processing (throttle)
   // iPad-optimized: Lower throttling for better touch responsiveness
   // iPad touch events fire more frequently, so we need lower throttling
@@ -42,7 +43,7 @@ export function useCanvas() {
 
   const [config, setConfig] = useState<CanvasConfig>({
     width: 1024,
-    height: 5000, // Increased height for scrolling
+    height: 5000,
     backgroundColor: '#FFF9E6',
     gridType: 'lined',
     zoom: 1,
@@ -73,13 +74,13 @@ export function useCanvas() {
       el.height = Math.max(1, config.height) * dpr; // Use config height for scrolling
       el.style.width = `${Math.max(1, rect.width)}px`;
       el.style.height = `${config.height}px`; // Full canvas height for scrolling
-      const ctx = el.getContext('2d', { 
+      const ctx = el.getContext('2d', {
         alpha: true,
         desynchronized: true, // Better performance on tablets
-        willReadFrequently: false 
+        willReadFrequently: false
       });
-      if (ctx) { 
-        ctx.setTransform(1, 0, 0, 1, 0, 0); 
+      if (ctx) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.scale(dpr, dpr);
         if (el === c) ctxRef.current = ctx; // Cache main canvas context
       }
@@ -157,7 +158,7 @@ export function useCanvas() {
         // Variable width rendering for Pen with smooth curves
         ctx.beginPath();
         ctx.moveTo(s.points[0].x, s.points[0].y);
-        
+
         for (let i = 1; i < s.points.length; i++) {
           const p0 = s.points[i - 1];
           const p1 = s.points[i];
@@ -173,28 +174,28 @@ export function useCanvas() {
           const segmentWidth = baseWidth * pressureFactor;
 
           ctx.lineWidth = segmentWidth;
-          
+
           // Draw to actual point for pen tool (fixes gaps and improves smoothness)
           ctx.quadraticCurveTo(control.x, control.y, p1.x, p1.y);
         }
-          ctx.stroke();
+        ctx.stroke();
       } else {
         // Constant width for others (Pencil/Highlighter/Eraser) with smooth curves
         ctx.beginPath();
         ctx.moveTo(s.points[0].x, s.points[0].y);
-        
+
         for (let i = 1; i < s.points.length; i++) {
           const p0 = s.points[i - 1];
           const p1 = s.points[i];
           const p2 = i < s.points.length - 1 ? s.points[i + 1] : undefined;
-          
+
           // Calculate smooth control point
           const control = CanvasService.getBezierControlPoint(p0, p1, p2);
           const midX = (p0.x + p1.x) / 2;
           const midY = (p0.y + p1.y) / 2;
-          
+
           ctx.quadraticCurveTo(control.x, control.y, midX, midY);
-          
+
           // Draw to final point
           if (i === s.points.length - 1) {
             ctx.lineTo(p1.x, p1.y);
@@ -212,6 +213,11 @@ export function useCanvas() {
     undo: () => setStrokes(prev => prev.filter(s => s.id !== stroke.id)),
   }), []);
 
+  const deleteStrokeCommand = useCallback((stroke: Stroke): Command => ({
+    do: () => { setStrokes(prev => prev.filter(s => s.id !== stroke.id)); deleteStroke(stroke.id); },
+    undo: () => { setStrokes(prev => [...prev, stroke]); saveStroke(stroke); },
+  }), []);
+
   const clearCommand = useCallback((): Command => {
     let prev: Stroke[] = [];
     return {
@@ -222,11 +228,30 @@ export function useCanvas() {
 
   // Public API used by pointer events
   const beginStroke = useCallback((p: StrokePoint) => {
+    // OBJECT ERASER: Check for hit immediately on tap!
+    if (tool === 'eraser' && eraserMode === 'object') {
+      // Check current visible strokes (reverse order to hit top strokes first)
+      let hitStroke: Stroke | null = null;
+      for (let i = strokes.length - 1; i >= 0; i--) {
+        const stroke = strokes[i];
+        if (GeometryService.isPointNearStroke(p, stroke)) {
+          hitStroke = stroke;
+          break; // Only erase one at a time for control
+        }
+      }
+
+      if (hitStroke) {
+        historyRef.current.push(deleteStrokeCommand(hitStroke));
+        redrawAll(); // Force redraw
+      }
+      return;
+    }
+
     // Reset performance tracking
     lastProcessedTimeRef.current = performance.now();
     pendingPointsRef.current = [];
     smoothingBufferRef.current = [p];
-    
+
     // Ensure canvas context is cached
     if (!ctxRef.current && canvasRef.current) {
       ctxRef.current = canvasRef.current.getContext('2d', {
@@ -235,7 +260,7 @@ export function useCanvas() {
         willReadFrequently: false
       });
     }
-    
+
     const stroke: Stroke = {
       id: `s_${Date.now()}_${Math.random()}`,
       tool,
@@ -248,18 +273,43 @@ export function useCanvas() {
     currentStrokeRef.current = stroke;
     lastPointRef.current = p;
     (stroke as any).lastDrawnIndex = 0; // Initialize drawing index
-  }, [tool, color, width, opacity]);
+  }, [tool, color, width, opacity, eraserMode]);
 
   const extendStroke = useCallback((p: StrokePoint) => {
+    // OBJECT ERASER LOGIC
+    if (tool === 'eraser' && eraserMode === 'object') {
+      // Find intersecting strokes
+      // Throttle collision detection for performance
+      const now = performance.now();
+      if (now - lastProcessedTimeRef.current < 16) return; // 60fps limit for collision
+      lastProcessedTimeRef.current = now;
+
+      // Check current visible strokes (reverse order to hit top strokes first)
+      let hitStroke: Stroke | null = null;
+      for (let i = strokes.length - 1; i >= 0; i--) {
+        const stroke = strokes[i];
+        if (GeometryService.isPointNearStroke(p, stroke)) {
+          hitStroke = stroke;
+          break; // Only erase one at a time for control
+        }
+      }
+
+      if (hitStroke) {
+        historyRef.current.push(deleteStrokeCommand(hitStroke));
+        redrawAll(); // Force redraw
+      }
+      return;
+    }
+
     const stroke = currentStrokeRef.current; if (!stroke) return;
     const now = performance.now();
-    
+
     // Throttle: Skip processing if too soon (reduces lag on fast movements)
     if (now - lastProcessedTimeRef.current < MIN_PROCESSING_INTERVAL) {
       pendingPointsRef.current.push(p);
       return; // Will be processed in next RAF
     }
-    
+
     const last = lastPointRef.current || stroke.points[stroke.points.length - 1];
     lastProcessedTimeRef.current = now;
 
@@ -291,10 +341,10 @@ export function useCanvas() {
       const smoothed = buffer.length >= 2
         ? CanvasService.smoothPointIncremental(point, buffer, 2)
         : point; // No smoothing if buffer too small
-      
+
       smoothedPoints.push(smoothed);
       smoothingBufferRef.current.push(smoothed);
-      
+
       // Keep buffer small (max 3 points) for performance
       if (smoothingBufferRef.current.length > 3) {
         smoothingBufferRef.current.shift();
@@ -314,14 +364,14 @@ export function useCanvas() {
         if (!ctx || !stroke || stroke.points.length < 2) {
           rafIdRef.current = null;
           return;
-    }
+        }
 
         // Process any pending points first with proper interpolation for smooth connections
         if (pendingPointsRef.current.length > 0) {
           const pending = pendingPointsRef.current;
           pendingPointsRef.current = [];
           const last = stroke.points[stroke.points.length - 1] || lastPointRef.current;
-          
+
           if (last && pending.length > 0) {
             // Process pending points with interpolation to ensure smooth connections
             let currentPoint = last;
@@ -329,7 +379,7 @@ export function useCanvas() {
               const dx = pendingPoint.x - currentPoint.x;
               const dy = pendingPoint.y - currentPoint.y;
               const distance = Math.sqrt(dx * dx + dy * dy);
-              
+
               // Interpolate if distance is large (fast movement)
               if (distance > 10) {
                 const interpolated = CanvasService.interpolatePoints(currentPoint, pendingPoint, 5);
@@ -338,7 +388,7 @@ export function useCanvas() {
                   stroke.points.push(interpolated[j]);
                 }
               }
-              
+
               stroke.points.push(pendingPoint);
               currentPoint = pendingPoint;
             }
@@ -348,7 +398,7 @@ export function useCanvas() {
 
         const lastDrawnIndex = (stroke as any).lastDrawnIndex || 0;
         const pointsToDraw = stroke.points.slice(lastDrawnIndex);
-        
+
         if (pointsToDraw.length < 2) {
           rafIdRef.current = null;
           return;
@@ -361,32 +411,32 @@ export function useCanvas() {
 
         // Set context state once per stroke
         if (!(stroke as any).ctxStateSet) {
-      if (stroke.tool === 'eraser') {
-        ctx.globalCompositeOperation = 'destination-out';
-        ctx.globalAlpha = stroke.opacity;
+          if (stroke.tool === 'eraser') {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.globalAlpha = stroke.opacity;
             ctx.lineWidth = stroke.width; // stroke.width is already multiplied by 4 in beginStroke
-      } else if (stroke.tool === 'highlighter') {
-        ctx.globalCompositeOperation = 'multiply';
-        ctx.globalAlpha = 0.3;
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = stroke.width * 6;
-        ctx.lineCap = 'butt';
+          } else if (stroke.tool === 'highlighter') {
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.globalAlpha = 0.3;
+            ctx.strokeStyle = stroke.color;
+            ctx.lineWidth = stroke.width * 6;
+            ctx.lineCap = 'butt';
             ctx.lineJoin = 'round';
-      } else if (stroke.tool === 'pencil') {
-        ctx.globalCompositeOperation = 'source-over';
-        const pattern = getPattern(ctx, stroke.color, 0.9);
-        ctx.strokeStyle = pattern || stroke.color;
-        ctx.globalAlpha = 1;
+          } else if (stroke.tool === 'pencil') {
+            ctx.globalCompositeOperation = 'source-over';
+            const pattern = getPattern(ctx, stroke.color, 0.9);
+            ctx.strokeStyle = pattern || stroke.color;
+            ctx.globalAlpha = 1;
             ctx.lineWidth = Math.max(0.8, stroke.width * 0.9);
-        ctx.lineCap = 'round';
+            ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
-      } else {
+          } else {
             // Default Pen
-        ctx.globalCompositeOperation = 'source-over';
-        ctx.globalAlpha = stroke.opacity;
-        ctx.strokeStyle = stroke.color;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = stroke.opacity;
+            ctx.strokeStyle = stroke.color;
             ctx.lineWidth = stroke.width;
-        ctx.lineCap = 'round';
+            ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
           }
           (stroke as any).ctxStateSet = true;
@@ -403,15 +453,15 @@ export function useCanvas() {
           // Fast midpoint-based control points provide smooth curves without expensive calculations
           let lastWidth = stroke.width; // Track last width
           for (let i = 1; i < pointsToDraw.length; i++) {
-            const p0 = i === 1 && lastDrawnIndex > 0 
-              ? stroke.points[lastDrawnIndex - 1] 
+            const p0 = i === 1 && lastDrawnIndex > 0
+              ? stroke.points[lastDrawnIndex - 1]
               : pointsToDraw[i - 1];
             const p1 = pointsToDraw[i];
-            
+
             const pressure = p1.pressure || 0.5;
             const pressureFactor = 0.7 + (pressure * 0.6);
             const newWidth = stroke.width * pressureFactor;
-            
+
             // More responsive width changes for precise handwriting (every 2-3 points instead of 5)
             // This ensures pressure changes are reflected quickly during writing
             const prevPressure = p0.pressure || 0.5;
@@ -420,28 +470,28 @@ export function useCanvas() {
               ctx.lineWidth = newWidth;
               lastWidth = newWidth;
             }
-            
+
             // Simplified quadratic curve: use midpoint as control point (fast and smooth)
             // This creates smooth curves for handwriting while maintaining performance
             const controlX = (p0.x + p1.x) / 2;
             const controlY = (p0.y + p1.y) / 2;
             ctx.quadraticCurveTo(controlX, controlY, p1.x, p1.y);
           }
-      } else {
+        } else {
           // Other tools: Keep original curve drawing
           let lastWidth = null;
           for (let i = 1; i < pointsToDraw.length; i++) {
-            const p0 = i === 1 && lastDrawnIndex > 0 
-              ? stroke.points[lastDrawnIndex - 1] 
+            const p0 = i === 1 && lastDrawnIndex > 0
+              ? stroke.points[lastDrawnIndex - 1]
               : pointsToDraw[i - 1];
             const p1 = pointsToDraw[i];
             const p2 = i < pointsToDraw.length - 1 ? pointsToDraw[i + 1] : undefined;
 
             // Simplified control point calculation for speed
-            const control = p2 
+            const control = p2
               ? CanvasService.getBezierControlPoint(p0, p1, p2)
               : { x: (p0.x + p1.x) / 2, y: (p0.y + p1.y) / 2 };
-            
+
             // For other tools, keep original midpoint drawing
             const midX = (p0.x + p1.x) / 2;
             const midY = (p0.y + p1.y) / 2;
@@ -449,17 +499,22 @@ export function useCanvas() {
           }
         }
 
-      ctx.stroke();
-        
+        ctx.stroke();
+
         if (needsSave) ctx.restore();
-        
+
         (stroke as any).lastDrawnIndex = stroke.points.length;
         rafIdRef.current = null;
       });
     }
-  }, [width, tool, getPattern]);
+  }, [width, tool, getPattern, eraserMode, strokes, deleteStrokeCommand, redrawAll]);
 
   const endStroke = useCallback(() => {
+    // OBJECT ERASER: Nothing to save
+    if (tool === 'eraser' && eraserMode === 'object') {
+      return;
+    }
+
     // Cancel any pending animation frame and process immediately
     if (rafIdRef.current !== null) {
       cancelAnimationFrame(rafIdRef.current);
@@ -467,7 +522,7 @@ export function useCanvas() {
     }
 
     const stroke = currentStrokeRef.current; if (!stroke) return;
-    
+
     // Process any remaining pending points
     if (pendingPointsRef.current.length > 0) {
       pendingPointsRef.current.forEach(pendingPoint => {
@@ -475,27 +530,27 @@ export function useCanvas() {
       });
       pendingPointsRef.current = [];
     }
-    
+
     // Reset context state flag to prevent state leakage
     (stroke as any).ctxStateSet = false;
-    
-    currentStrokeRef.current = null; 
+
+    currentStrokeRef.current = null;
     lastPointRef.current = null;
-    
+
     // OPTIMIZATION: Apply heavy smoothing only at end (not during drawing)
     // This gives smooth result without lag during drawing
     const smoothed = { ...stroke, points: StrokeEngine.smooth(stroke.points) };
-    
+
     // Clear buffers
     smoothingBufferRef.current = [];
     lastProcessedTimeRef.current = 0;
-    
+
     // Redraw the entire smoothed stroke with final smoothing
     redrawAll();
-    
+
     // Persist via command (async, non-blocking)
     historyRef.current.push(addStrokeCommand(smoothed));
-  }, [addStrokeCommand, redrawAll]);
+  }, [addStrokeCommand, redrawAll, tool, eraserMode]);
 
   const clearCanvas = useCallback(() => {
     historyRef.current.push(clearCommand());

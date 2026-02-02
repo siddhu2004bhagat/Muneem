@@ -1,0 +1,223 @@
+
+> vite_react_shadcn_ts@0.0.0 lint
+> eslint .
+
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ErrorBoundary.tsx
+  18:5  warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/forms/InlinePenInput.tsx
+  431:6   warning  React Hook useCallback has a missing dependency: 'getPathsBoundingBox'. Either include it or remove the dependency array               react-hooks/exhaustive-deps
+  661:21  error    Unexpected any. Specify a different type                                                                                               @typescript-eslint/no-explicit-any
+  708:6   warning  React Hook useCallback has unnecessary dependencies: 'onClose' and 'onRecognized'. Either exclude them or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/forms/PenInputModal.tsx
+   97:6   warning  React Hook useCallback has missing dependencies: 'cancelAutoRecognize' and 'handleRecognize'. Either include them or remove the dependency array                                                                                                                               react-hooks/exhaustive-deps
+  116:22  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  268:27  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+  269:13  error    Empty block statement                                                                                                                                                                                                                                                          no-empty
+  501:6   warning  React Hook useCallback has missing dependencies: 'onRecognizedTargeted' and 'targetField'. Either include them or remove the dependency array. If 'onRecognizedTargeted' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/forms/parseLedgerText.ts
+  135:49  error  Unnecessary escape character: \/  no-useless-escape
+  135:61  error  Unnecessary escape character: \/  no-useless-escape
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/layout/FilterBar.tsx
+  55:6  warning  React Hook useEffect has missing dependencies: 'filters' and 'onFiltersChange'. Either include them or remove the dependency array. If 'onFiltersChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/layout/LedgerTable.tsx
+   75:6   warning  React Hook useEffect has a missing dependency: 'loadEntries'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   97:19  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  188:31  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+  239:21  error    Unexpected any. Specify a different type                                                                        @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/badge.tsx
+  29:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/button.tsx
+  47:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/form.tsx
+  129:10  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/navigation-menu.tsx
+  111:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/sidebar.tsx
+  636:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/sonner.tsx
+  27:19  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/components/ui/toggle.tsx
+  37:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/inventory/components/ItemList.tsx
+  152:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/inventory/components/SummaryTable.tsx
+  76:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/inventory/hooks/useInventorySync.ts
+   6:26  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   7:26  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   9:27  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  25:27  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  36:13  error  Unexpected lexical declaration in case block  no-case-declarations
+  42:13  error  Unexpected lexical declaration in case block  no-case-declarations
+  48:13  error  Unexpected lexical declaration in case block  no-case-declarations
+  54:13  error  Unexpected lexical declaration in case block  no-case-declarations
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/ledger-formats/config/formats.config.ts
+  315:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/payments/UPIList.tsx
+  52:6  warning  React Hook useEffect has a missing dependency: 'filterIntents'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/payments/WhatsAppShare.tsx
+  200:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  251:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  267:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  333:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/payments/services/upi-autosync.service.ts
+  10:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/PenCanvas.tsx
+  166:32  error    Unexpected any. Specify a different type                                                                                                @typescript-eslint/no-explicit-any
+  167:33  error    Unexpected any. Specify a different type                                                                                                @typescript-eslint/no-explicit-any
+  301:6   warning  React Hook useCallback has missing dependencies: 'canvasRef' and 'handleUseResult'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  356:6   warning  React Hook useCallback has a missing dependency: 'canvasRef'. Either include it or remove the dependency array                          react-hooks/exhaustive-deps
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/PenInputWrapper.tsx
+  14:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/context/NotebookContext.tsx
+   97:6   warning  React Hook useEffect has a missing dependency: 'refreshPages'. Either include it or remove the dependency array                 react-hooks/exhaustive-deps
+  320:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/context/PenToolContext.tsx
+  48:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/hooks/useCanvas.ts
+   89:6   warning  React Hook useCallback has a missing dependency: 'redrawAll'. Either include it or remove the dependency array               react-hooks/exhaustive-deps
+   97:67  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  250:16  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  349:43  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  359:39  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  363:25  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  392:22  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  432:15  error    'lastWidth' is never reassigned. Use 'const' instead                                                                         prefer-const
+  456:20  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+  460:6   warning  React Hook useCallback has unnecessary dependencies: 'tool' and 'width'. Either exclude them or remove the dependency array  react-hooks/exhaustive-deps
+  480:16  error    Unexpected any. Specify a different type                                                                                     @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/ocr/components/OCRConfirm.tsx
+  38:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/ocr/postprocess.ts
+  48:7   error  'cleaned' is never reassigned. Use 'const' instead  prefer-const
+  49:19  error  Unnecessary escape character: \.                    no-useless-escape
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/services/history.service.ts
+  7:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/services/recognition.service.ts
+   49:19  error  Unnecessary escape character: \/                        no-useless-escape
+   49:31  error  Unnecessary escape character: \/                        no-useless-escape
+  125:54  error  Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  128:9   error  'totalPixels' is never reassigned. Use 'const' instead  prefer-const
+  227:54  error  Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+  230:66  error  Unexpected any. Specify a different type                @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/services/shapeSnapper.ts
+  237:9  error  'lastDirection' is never reassigned. Use 'const' instead  prefer-const
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/pen-input/types/pen.types.ts
+  106:15  error  Unnecessary escape character: \/  no-useless-escape
+  106:27  error  Unnecessary escape character: \/  no-useless-escape
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/features/reports/gst/services/gst.service.ts
+   47:25  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   47:72  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   48:25  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   49:25  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   49:71  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   50:76  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   55:22  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   79:24  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+   98:5   warning  Unused eslint-disable directive (no problems were reported from 'no-console')
+  146:48  error    Unexpected any. Specify a different type                                       @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/hooks/useLedgerSync.ts
+   6:28  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+   7:28  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  27:27  error  Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  38:13  error  Unexpected lexical declaration in case block  no-case-declarations
+  44:13  error  Unexpected lexical declaration in case block  no-case-declarations
+  50:13  error  Unexpected lexical declaration in case block  no-case-declarations
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/hooks/useRole.ts
+  6:11  error  Empty block statement  no-empty
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/hooks/useSyncStatus.ts
+  8:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/lib/db.ts
+  90:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  91:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/lib/localStore.ts
+   68:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   69:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   70:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  226:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  227:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  228:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/lib/platform.ts
+  23:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  37:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  38:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/services/api.service.ts
+  13:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  14:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  15:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/services/audit.service.ts
+  14:82  error  Empty block statement  no-empty
+  20:15  error  Empty block statement  no-empty
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/services/ledger.api.ts
+   50:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  237:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/services/ledger.datasource.ts
+  263:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  273:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  283:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  293:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/services/role.service.ts
+  17:75  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/services/ws.service.ts
+   4:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  10:88  error  Empty block statement                     no-empty
+  18:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/src/vite-env.d.ts
+  3:11  error  An empty interface declaration allows any non-nullish value, including literals like `0` and `""`.
+- If that's what you want, disable this lint rule with an inline comment or configure the 'allowInterfaces' rule option.
+- If you want a type meaning "any object", you probably want `object` instead.
+- If you want a type meaning "any value", you probably want `unknown` instead  @typescript-eslint/no-empty-object-type
+
+/Users/abdulkadir/DIGBAHI_ACCOUNTING/digi-bahi-ink/tailwind.config.ts
+  112:13  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 120 problems (97 errors, 23 warnings)
+  4 errors and 2 warnings potentially fixable with the `--fix` option.
+
