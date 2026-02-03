@@ -60,27 +60,28 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     clearCanvas,
     undo,
     redo,
+    getContentBoundingBox, // NEW: For OCR optimization
   } = useCanvas();
 
   const { mode, tool, color, width, opacity } = usePenTool();
-  
+
   // NEW: Notebook context for multi-page support
-  const { 
-    currentPage, 
-    updateCurrentPage, 
-    savePage 
+  const {
+    currentPage,
+    updateCurrentPage,
+    savePage
   } = useNotebook();
   const [pendingShape, setPendingShape] = useState<unknown>(null);
   const [recognitionResults, setRecognitionResults] = useState<RecognitionResult[]>([]);
   const [recognizing, setRecognizing] = useState(false);
   const [selectedResult, setSelectedResult] = useState<RecognitionResult | null>(null);
   const [showStructuredData, setShowStructuredData] = useState(false);
-  
+
   // NEW: State for hybrid OCR
   const [ocrResults, setOcrResults] = useState<OCRResult[]>([]);
   const [showOCRToast, setShowOCRToast] = useState(false);
   const [showCorrectionOverlay, setShowCorrectionOverlay] = useState(false);
-  
+
   // NEW: State for OCR confirm dialog
   const [showOCRConfirm, setShowOCRConfirm] = useState(false);
   const [currentOCRData, setCurrentOCRData] = useState<{
@@ -96,6 +97,27 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     const hashArray = Array.from(new Uint8Array(buffer));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
+
+  // Helper function to create OCR summary from results
+  const createOCRSummary = useCallback((results: OCRResult[]) => {
+    if (results.length === 0) {
+      return {
+        count: 0,
+        averageConfidence: 0,
+        hasLowConfidence: false
+      };
+    }
+
+    const totalConfidence = results.reduce((sum, r) => sum + r.confidence, 0);
+    const averageConfidence = totalConfidence / results.length;
+    const hasLowConfidence = results.some(r => r.confidence < 0.6);
+
+    return {
+      count: results.length,
+      averageConfidence,
+      hasLowConfidence
+    };
+  }, []);
 
   // Draw template on background canvas when page/template changes
   useEffect(() => {
@@ -128,26 +150,26 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
   const getPosition = (e: React.PointerEvent) => {
     const canvas = canvasRef.current!;
     if (!canvas) return { x: 0, y: 0, pressure: 1 };
-    
+
     const rect = canvas.getBoundingClientRect();
     const container = containerRef.current;
     const dpr = window.devicePixelRatio || 1;
-    
+
     // CRITICAL FIX FOR IPAD: Properly calculate coordinates accounting for CSS transform
     // Canvas has CSS transform: scale(zoom) translate(pan.x, pan.y)
     // CSS transforms apply right-to-left: scale(zoom) THEN translate(pan.x, pan.y)
     // So: canvas coord (x,y) → screen: (x * zoom) + pan.x, (y * zoom) + pan.y
     // Inverse: screen coord → canvas: (screenX - pan.x) / zoom, (screenY - pan.y) / zoom
-    
+
     // Get coordinates relative to the canvas element's bounding box (in viewport pixels)
     // getBoundingClientRect() returns the transformed bounding box
     const screenX = e.clientX - rect.left;
     const screenY = e.clientY - rect.top;
-    
+
     // Account for container scroll (canvas is absolutely positioned, container scrolls)
     // scrollTop is in CSS pixels, same coordinate space as canvas
     const scrollY = container ? container.scrollTop : 0;
-    
+
     // Inverse the CSS transform to get canvas coordinates (in CSS pixels)
     // CSS transform: scale(zoom) translate(pan.x, pan.y)
     // Transform order: scale first, then translate
@@ -156,10 +178,10 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     // Canvas context is scaled by DPR internally, so we work in CSS pixels
     const x = (screenX - config.pan.x) / config.zoom;
     const y = ((screenY + scrollY) - config.pan.y) / config.zoom;
-    
+
     // Get pressure - for touch devices, use width/height as pressure indicator
     let pressure = (e as React.PointerEvent & { pressure?: number }).pressure ?? 1;
-    
+
     // For touch devices without pressure support, simulate based on touch area
     if (e.pointerType === 'touch' && pressure === 1) {
       // Use touch width/height to estimate pressure (larger touch = more pressure)
@@ -171,7 +193,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         pressure = Math.min(1.0, Math.max(0.5, 0.5 + (touchArea / 60) * 0.5));
       }
     }
-    
+
     return { x, y, pressure: Math.max(0.1, Math.min(1.0, pressure)) };
   };
 
@@ -185,7 +207,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
   // Enhanced pointer up handler
   const onUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     onPointerUp(e);
-    
+
     if (mode === 'shape') {
       // Shape detection logic
       const canvas = canvasRef.current;
@@ -193,7 +215,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        
+
         // Simple shape detection based on recent strokes
         const shape = detectShape([{ x, y, pressure: 1, timestamp: Date.now() }]);
         if (shape) {
@@ -209,33 +231,33 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
   const performOCR = async (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const x = Math.max(0, e.clientX - rect.left - 50);
     const y = Math.max(0, e.clientY - rect.top - 25);
     const width = Math.min(canvas.width - x, 100);
     const height = Math.min(canvas.height - y, 50);
-    
+
     try {
       setRecognizing(true);
       const imageData = ctx.getImageData(x, y, width, height);
       // Lazy-load recognition service
       const { recognizeImageData } = await loadRecognition();
       const result = await recognizeImageData(imageData);
-      
+
       // Generate image hash for telemetry
       const imageHash = await generateImageHash(imageData);
-      
+
       // Apply post-processing pipeline BEFORE showing confirm dialog
       const processedResult = postProcessOCRResult(
         result.text,
         result.confidence,
         navigator.language || 'en-IN'
       );
-      
+
       // Show OCR confirm dialog with processed suggestions
       setCurrentOCRData({
         text: result.text,
@@ -244,7 +266,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         processedFields: processedResult
       });
       setShowOCRConfirm(true);
-      
+
     } catch (error) {
       toast.error("OCR recognition failed");
       console.error('OCR Error:', error);
@@ -261,7 +283,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
 
   const handleRecognizeAll = useCallback(async () => {
     if (!canvasRef.current) return;
-    
+
     setRecognizing(true);
     try {
       const canvas = canvasRef.current;
@@ -273,18 +295,18 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
       // Lazy-load recognition service
       const { recognizeImageData } = await loadRecognition();
       const result = await recognizeImageData(imageData);
-      
+
       const structuredData = EnhancedRecognitionService.extractStructuredData(result.text);
-      
+
       const recognitionResult: RecognitionResult = {
         text: result.text,
         confidence: result.confidence,
         structuredData
       };
-      
+
       setRecognitionResults([recognitionResult]);
       setSelectedResult(recognitionResult);
-      
+
       toast.success("Full canvas recognized!", {
         description: `"${result.text}" (${(result.confidence * 100).toFixed(1)}%)`,
         action: {
@@ -300,51 +322,68 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     }
   }, []);
 
-  // NEW: Hybrid OCR Recognition Handler
+  // NEW: Hybrid OCR Recognition Handler with Smart Cropping
   const handleHybridRecognize = useCallback(async () => {
     if (!canvasRef.current) return;
-    
+
     setRecognizing(true);
     setOcrResults([]);
     setShowOCRToast(false);
     setShowCorrectionOverlay(false);
-    
+
     try {
       const canvas = canvasRef.current;
+
+      // NEW: Get bounding box of drawn content for smart cropping
+      const boundingBox = getContentBoundingBox();
+
+      if (!boundingBox) {
+        toast.info("No content to recognize", {
+          description: "Draw some text on the canvas first"
+        });
+        setRecognizing(false);
+        return;
+      }
+
+      console.log(`[PenCanvas] OCR with smart cropping: ${boundingBox.width}x${boundingBox.height}px (${Math.round((boundingBox.width * boundingBox.height) / 1000000 * 10) / 10}M pixels)`);
+
       // Lazy-load OCR service
       const { getOCRHybridService } = await loadOCR();
       const hybridService = getOCRHybridService();
       const correctionService = getCorrectionService();
-      
+
       // Initialize correction service
       await correctionService.initialize();
-      
-      // Use hybrid OCR service
-      let results = await hybridService.recognizeCanvas(canvas, { mode: 'auto' });
-      
+
+      // Use hybrid OCR service with smart cropping
+      let results = await hybridService.recognizeCanvas(canvas, {
+        mode: 'auto',
+        boundingBox // NEW: Pass bounding box for cropping
+      });
+
       if (results.length === 0) {
         toast.info("No text detected", {
           description: "Try writing more clearly or adjusting the canvas."
         });
         return;
       }
-      
+
       // PHASE C: Apply adaptive biasing
       const stats = correctionService.getStats();
       if (stats.totalCorrections > 0) {
         console.log(`[PenCanvas] Applying adaptive bias (${stats.totalCorrections} corrections)`);
         results = await correctionService.applyAdaptiveBias(results);
       }
-      
+
       setOcrResults(results);
       setShowOCRToast(true);
-      
+
       // Auto-open correction overlay based on user preference
       const shouldShowOverlay = localStorage.getItem('muneem_show_corrections_overlay');
       if (shouldShowOverlay === 'true' || shouldShowOverlay === null) {
         setShowCorrectionOverlay(true);
       }
-      
+
     } catch (error) {
       toast.error("Hybrid OCR failed", {
         description: error instanceof Error ? error.message : "Unknown error"
@@ -353,26 +392,26 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
     } finally {
       setRecognizing(false);
     }
-  }, []);
+  }, [getContentBoundingBox]);
 
   // Handle OCR correction confirm (from TextCorrectionOverlay)
   const handleCorrectionConfirm = useCallback(async (correctedBoxes: OCRResult[]) => {
     // PHASE C: Save corrections to correction.service
     const correctionService = getCorrectionService();
     await correctionService.initialize(); // Ensure initialized
-    
+
     // Find boxes that were edited (correctedText !== recognizedText)
     const originalBoxes = ocrResults; // Store original before edits
     const editedBoxes = correctedBoxes.filter((corrected, idx) => {
       const original = originalBoxes[idx];
       return original && original.text !== corrected.text;
     });
-    
+
     // Save each correction
     for (let i = 0; i < editedBoxes.length; i++) {
       const corrected = editedBoxes[i];
       const original = originalBoxes.find(o => o.id === corrected.id);
-      
+
       if (original) {
         const correction: OCRCorrection = {
           id: corrected.id,
@@ -383,7 +422,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
           confidence: corrected.confidence,
           locale: 'en-IN' // Default locale
         };
-        
+
         try {
           await correctionService.saveCorrection(correction);
         } catch (error) {
@@ -391,23 +430,23 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         }
       }
     }
-    
+
     // Consolidate text and trigger callback
     const fullText = correctedBoxes.map(box => box.text).join(' ');
     const avgConfidence = correctedBoxes.reduce((sum, b) => sum + b.confidence, 0) / correctedBoxes.length;
-    
+
     onRecognized(fullText);
-    
+
     const savedCount = editedBoxes.length;
     toast.success("Text confirmed!", {
-      description: savedCount > 0 
+      description: savedCount > 0
         ? `"${fullText}" (${savedCount} correction${savedCount !== 1 ? 's' : ''} saved)`
         : `"${fullText}" (avg. ${(avgConfidence * 100).toFixed(1)}%)`
     });
-    
+
     setShowCorrectionOverlay(false);
     setShowOCRToast(false);
-    
+
     // NOTE: History integration
     // The OCR correction is treated as a ledger entry operation, not a canvas
     // drawing operation. Undo/redo for OCR would revert the ledger entry itself,
@@ -426,7 +465,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
 
   // Handle OCR edit (inline)
   const handleOCREdit = useCallback((id: string, newText: string) => {
-    setOcrResults(prev => prev.map(box => 
+    setOcrResults(prev => prev.map(box =>
       box.id === id ? { ...box, text: newText } : box
     ));
   }, []);
@@ -434,11 +473,11 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
   // OCR Confirm handlers
   const handleOCRConfirm = useCallback((fields: { id: string; value: string }[]) => {
     if (!currentOCRData) return;
-    
+
     // Extract the main text from fields
-    const mainText = fields.find(f => f.id === 'notes')?.value || 
-                    fields.map(f => f.value).join(' ');
-    
+    const mainText = fields.find(f => f.id === 'notes')?.value ||
+      fields.map(f => f.value).join(' ');
+
     // Create undoable command for OCR-created ledger entry
     const ocrCommand = {
       action: 'ocr-correction' as const,
@@ -455,19 +494,19 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         sessionId: sessionStorage.getItem('sessionId') || `session_${Date.now()}`
       }
     };
-    
+
     // Push to history service for undo/redo support
     // Note: This is a placeholder - actual integration would use history.service
     console.log('OCR Command for history:', ocrCommand);
-    
+
     // Call the parent callback with the confirmed text
     // Parent (Index.tsx) will handle actual ledger entry creation
     onRecognized(mainText);
-    
+
     // Close the confirm dialog
     setShowOCRConfirm(false);
     setCurrentOCRData(null);
-    
+
     toast.success('OCR result confirmed and saved to ledger');
   }, [currentOCRData, onRecognized]);
 
@@ -512,9 +551,9 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         </div>
 
         {/* Tool Palette */}
-        <ToolPalette 
-          onUndo={undo} 
-          onRedo={redo} 
+        <ToolPalette
+          onUndo={undo}
+          onRedo={redo}
           onClear={clearCanvas}
           onRecognize={handleHybridRecognize}
           isRecognizing={recognizing}
@@ -527,13 +566,13 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
           style={{ height: '500px' }}
         >
           {/* Drawing hint */}
-          <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none" style={{opacity: 0.1}}>
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none" style={{ opacity: 0.1 }}>
             <div className="text-center">
               <Pen className="w-8 h-8 mx-auto mb-2 text-gray-400" />
               <span className="text-sm text-gray-500">Draw here with your pen or finger</span>
             </div>
           </div>
-          
+
           {/* Background Canvas */}
           <canvas
             ref={backgroundCanvasRef}
@@ -543,15 +582,15 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
               transformOrigin: '0 0',
             }}
           />
-          
+
           {/* Overlays */}
           <LassoOverlay rect={null} />
-          <ShapeSnapOverlay 
-            shape={pendingShape} 
-            onConfirm={() => setPendingShape(null)} 
-            onCancel={() => setPendingShape(null)} 
+          <ShapeSnapOverlay
+            shape={pendingShape}
+            onConfirm={() => setPendingShape(null)}
+            onCancel={() => setPendingShape(null)}
           />
-          
+
           {/* NEW: Text Correction Overlay */}
           {showCorrectionOverlay && ocrResults.length > 0 && (
             <TextCorrectionOverlay
@@ -592,7 +631,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="space-y-2">
                 {recognitionResults.map((result, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded border">
@@ -698,7 +737,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         {/* NEW: OCR Results Toast */}
         {showOCRToast && ocrResults.length > 0 && (
           <OCRResultsToast
-            boxes={ocrResults}
+            summary={createOCRSummary(ocrResults)}
             onOpenCorrections={() => setShowCorrectionOverlay(true)}
             onDismiss={() => setShowOCRToast(false)}
           />

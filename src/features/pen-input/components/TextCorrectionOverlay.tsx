@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
 
 export interface CorrectionBox {
   id: string;
-  rect: { x: number; y: number; width: number; height: number };
+  box: { x: number; y: number; width: number; height: number };
   text: string;
   confidence: number;
   type?: 'tesseract' | 'tflite' | 'merged';
@@ -105,7 +105,7 @@ export function TextCorrectionOverlay({
   }
 
   return (
-    <div 
+    <div
       ref={overlayRef}
       className="fixed inset-0 z-50 pointer-events-none"
       style={{
@@ -132,10 +132,10 @@ export function TextCorrectionOverlay({
               hoveredId === box.id && "ring-2 ring-primary"
             )}
             style={{
-              left: box.rect.x,
-              top: box.rect.y,
-              width: Math.max(box.rect.width, 100), // Min width for usability
-              minHeight: box.rect.height
+              left: box.box.x,
+              top: box.box.y,
+              width: Math.max(box.box.width, 100), // Min width for usability
+              minHeight: box.box.height
             }}
             onMouseEnter={() => setHoveredId(box.id)}
             onMouseLeave={() => setHoveredId(null)}
@@ -145,8 +145,8 @@ export function TextCorrectionOverlay({
               <div className="flex items-center justify-between mb-2 gap-2">
                 <div className="flex items-center gap-1">
                   <span className="text-xs">{getTypeIcon(box.type)}</span>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className={cn("text-xs", getConfidenceColor(box.confidence))}
                   >
                     {Math.round(box.confidence * 100)}%
@@ -180,7 +180,7 @@ export function TextCorrectionOverlay({
                   className="text-sm"
                 />
               ) : (
-                <div 
+                <div
                   className="text-sm font-medium mb-2 cursor-text p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
                   onClick={() => setEditingId(box.id)}
                 >
@@ -219,7 +219,7 @@ export function TextCorrectionOverlay({
         <Card className="p-3 bg-white/95 dark:bg-gray-900/95 shadow-xl backdrop-blur-sm">
           <div className="flex items-center gap-3">
             <div className="text-sm text-muted-foreground">
-              {boxes.length} text box{boxes.length !== 1 ? 'es' : ''} • 
+              {boxes.length} text box{boxes.length !== 1 ? 'es' : ''} •
               {editedBoxes.size > 0 ? ` ${editedBoxes.size} edited` : ' No edits'}
             </div>
             <div className="flex gap-2">

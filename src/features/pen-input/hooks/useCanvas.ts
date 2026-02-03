@@ -562,6 +562,71 @@ export function useCanvas() {
   const undo = useCallback(() => historyRef.current.undo(), []);
   const redo = useCallback(() => historyRef.current.redo(), []);
 
+  /**
+   * Calculate bounding box of all drawn content for OCR optimization
+   * Returns the minimal rectangle containing all strokes, with padding
+   * Returns null if no strokes exist
+   */
+  const getContentBoundingBox = useCallback((): {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null => {
+    if (strokes.length === 0) {
+      return null;
+    }
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    // Find bounds of all stroke points
+    strokes.forEach(stroke => {
+      stroke.points.forEach(point => {
+        minX = Math.min(minX, point.x);
+        minY = Math.min(minY, point.y);
+        maxX = Math.max(maxX, point.x);
+        maxY = Math.max(maxY, point.y);
+      });
+    });
+
+    // If no valid points found
+    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) {
+      return null;
+    }
+
+    // Add padding to account for stroke width and ensure text isn't cut off
+    // Padding includes: max stroke width + safety margin
+    const padding = 50; // Generous padding for thick strokes and safety
+    const dpr = DPR();
+
+    // Get canvas dimensions for bounds checking
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    // Calculate bounding box in physical pixels (accounting for DPR)
+    // Coordinates are in CSS pixels, need to convert to physical pixels
+    const x = Math.max(0, Math.floor((minX - padding) * dpr));
+    const y = Math.max(0, Math.floor((minY - padding) * dpr));
+    const width = Math.min(
+      canvas.width - x,
+      Math.ceil((maxX - minX + padding * 2) * dpr)
+    );
+    const height = Math.min(
+      canvas.height - y,
+      Math.ceil((maxY - minY + padding * 2) * dpr)
+    );
+
+    // Ensure minimum size (at least 10x10 pixels)
+    if (width < 10 || height < 10) {
+      return null;
+    }
+
+    return { x, y, width, height };
+  }, [strokes]);
+
   useEffect(() => { redrawAll(); }, [strokes, redrawAll]);
 
   return {
@@ -578,6 +643,7 @@ export function useCanvas() {
     undo,
     redo,
     resizeToContainer,
+    getContentBoundingBox, // NEW: For OCR optimization
   };
 }
 

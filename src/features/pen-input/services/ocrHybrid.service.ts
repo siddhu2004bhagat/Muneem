@@ -21,6 +21,7 @@ interface RecognizeOptions {
   mode?: 'auto' | 'tesseract' | 'tflite' | 'backend';
   language?: string;
   rois?: Array<{ x: number; y: number; width: number; height: number }>;
+  boundingBox?: { x: number; y: number; width: number; height: number }; // NEW: For smart cropping
 }
 
 interface WorkerResult {
@@ -294,6 +295,8 @@ export default class OCRHybridService {
    * Recognize text from canvas
    * CRITICAL: On Linux tablets (Raspberry Pi), always routes to backend OCR service
    * to avoid heavy Tesseract.js WASM processing in browser
+   * 
+   * NEW: Supports smart cropping via boundingBox parameter to reduce image size
    */
   async recognizeCanvas(
     canvasEl: HTMLCanvasElement,
@@ -304,18 +307,65 @@ export default class OCRHybridService {
 
     if (ocrMode === 'backend' || isLinuxTablet()) {
       console.log('[OCRHybridService] Routing to backend OCR (Linux tablet detected)');
-      return this.recognizeWithBackend(canvasEl);
+      return this.recognizeWithBackend(canvasEl, options);
     }
 
-    // Get image data from canvas
-    const ctx = canvasEl.getContext('2d');
-    if (!ctx) throw new Error('Failed to get canvas context');
+    // NEW: Smart cropping - create temporary canvas with only the drawn content
+    let targetCanvas = canvasEl;
 
-    const imageData = ctx.getImageData(0, 0, canvasEl.width, canvasEl.height);
+    if (options.boundingBox) {
+      const { x, y, width, height } = options.boundingBox;
 
-    // Send to worker (browser-based Tesseract.js)
+      console.log(`[OCRHybridService] Smart cropping enabled: ${width}x${height}px (from ${canvasEl.width}x${canvasEl.height}px)`);
+
+      // Create temporary canvas with cropped dimensions
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+
+      const tempCtx = tempCanvas.getContext('2d');
+      if (tempCtx) {
+        // Draw only the cropped region from source canvas
+        tempCtx.drawImage(
+          canvasEl,
+          x, y, width, height,  // Source rectangle (what to copy)
+          0, 0, width, height   // Destination rectangle (where to paste)
+        );
+        targetCanvas = tempCanvas;
+
+        console.log(`[OCRHybridService] Cropped canvas created successfully`);
+      } else {
+        console.warn('[OCRHybridService] Failed to create cropped canvas, using full canvas');
+      }
+    }
+
+    // CRITICAL FIX: Convert canvas to Blob instead of passing HTMLCanvasElement or ImageData
+    // Why: 1) HTMLCanvasElement cannot be cloned via postMessage (DataCloneError)
+    //      2) ImageData gets corrupted in Chrome's Structured Clone Algorithm
+    // Solution: Convert to Blob (PNG) - reliable, transferable, Tesseract.js native support
+    // Source: Web API spec + Tesseract.js official docs
+
+    console.log(`[OCRHybridService] Converting canvas to Blob: ${targetCanvas.width}x${targetCanvas.height}px`);
+
+    // Convert canvas to Blob (PNG format, high quality for OCR)
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      targetCanvas.toBlob(
+        (b) => {
+          if (b) {
+            console.log(`[OCRHybridService] Blob created successfully: ${b.size} bytes`);
+            resolve(b);
+          } else {
+            reject(new Error('Failed to create blob from canvas'));
+          }
+        },
+        'image/png',
+        0.95 // High quality for OCR accuracy
+      );
+    });
+
+    // Send Blob to worker (reliable, no corruption, no cloning issues)
     const rawResults = await this.sendMessage('recognize', {
-      imageData,
+      blob, // Pass Blob - fixes both corruption and cloning issues
       options,
       rois: options.rois
     });
@@ -352,15 +402,47 @@ export default class OCRHybridService {
   /**
    * Recognize text using backend OCR service (Tesseract native)
    * This is the preferred method for Linux tablets (Raspberry Pi)
+   * 
+   * NEW: Supports smart cropping via options.boundingBox parameter
    */
-  private async recognizeWithBackend(canvasEl: HTMLCanvasElement): Promise<OCRResult[]> {
+  private async recognizeWithBackend(
+    canvasEl: HTMLCanvasElement,
+    options: RecognizeOptions = {}
+  ): Promise<OCRResult[]> {
     // Use OCR service on port 9000 (same host as API)
     const apiBase = getApiBaseUrl();
     const ocrHost = apiBase.replace(':8000', ':9000');
     const ocrEndpoint = `${ocrHost}/recognize`;
 
+    // NEW: Smart cropping - create temporary canvas if bounding box provided
+    let targetCanvas = canvasEl;
+
+    if (options.boundingBox) {
+      const { x, y, width, height } = options.boundingBox;
+
+      console.log(`[OCRHybridService] Backend OCR with smart cropping: ${width}x${height}px (from ${canvasEl.width}x${canvasEl.height}px)`);
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+
+      const tempCtx = tempCanvas.getContext('2d');
+      if (tempCtx) {
+        tempCtx.drawImage(
+          canvasEl,
+          x, y, width, height,
+          0, 0, width, height
+        );
+        targetCanvas = tempCanvas;
+
+        console.log(`[OCRHybridService] Cropped canvas for backend OCR created successfully`);
+      } else {
+        console.warn('[OCRHybridService] Failed to create cropped canvas for backend, using full canvas');
+      }
+    }
+
     // Convert canvas to base64
-    const dataUrl = canvasEl.toDataURL('image/png');
+    const dataUrl = targetCanvas.toDataURL('image/png');
     const base64 = dataUrl.split(',')[1];
 
     try {

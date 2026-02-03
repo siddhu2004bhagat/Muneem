@@ -16,7 +16,8 @@ import Tesseract from 'tesseract.js';
 interface WorkerMessage {
   type: 'init' | 'recognize' | 'warmup' | 'destroy';
   payload?: {
-    imageData?: ImageData;
+    blob?: Blob;                 // NEW: Accept Blob (preferred - fixes corruption + cloning issues)
+    imageData?: ImageData;       // Keep for backward compatibility
     options?: RecognizeOptions;
     rois?: Array<{ x: number; y: number; width: number; height: number }>;
   };
@@ -121,21 +122,38 @@ async function initialize(): Promise<void> {
 }
 
 /**
- * Run Tesseract OCR on image data
+ * Run Tesseract OCR on image data or canvas
+ * UPDATED: Now accepts HTMLCanvasElement (preferred) or ImageData (backward compat)
  */
-async function runTesseract(imageData: ImageData, options: RecognizeOptions): Promise<OCRResult[]> {
+async function runTesseract(
+  input: ImageData | Blob, // Accept both types
+  options: RecognizeOptions
+): Promise<OCRResult[]> {
   if (!tesseractWorker) {
     console.error('[OCR Worker] Tesseract not initialized');
     throw new Error('Tesseract not initialized');
   }
 
   try {
-    console.log('[OCR Worker] Starting recognition, image size:', imageData.width, 'x', imageData.height);
+    const inputType = input instanceof Blob ? 'Blob' : 'ImageData';
+    const dimensions = input instanceof Blob
+      ? `${input.size} bytes`
+      : `${input.width}x${input.height}`;
 
-    // Convert ImageData to format Tesseract expects (ImageData or ImageBitmap)
-    const result = await tesseractWorker.recognize(imageData);
+    console.log(`[OCR Worker] Starting recognition, input type: ${inputType}, size: ${dimensions}`);
+    console.log("═══ OCR WORKER DEBUG START ═══");
+    console.log("[OCR Worker] Input instanceof Blob:", input instanceof Blob);
+    console.log("[OCR Worker] Input instanceof ImageData:", input instanceof ImageData);
+
+    // TypeScript doesn't know this, so we cast to any
+    const result = await tesseractWorker.recognize(input as any);
     const data = result.data as { text: string; confidence: number; words?: Array<{ text: string; confidence: number; bbox: { x0: number; y0: number; x1: number; y1: number } }> };
 
+    console.log("[OCR Worker] ✅ Tesseract completed, result exists:", !!result);
+    console.log("[OCR Worker] result.data exists:", !!result?.data);
+    console.log("[OCR Worker] 📊 Text:", data.text ? `"${data.text}"` : "EMPTY");
+    console.log("[OCR Worker] 📊 Confidence:", data.confidence);
+    console.log("[OCR Worker] 📊 Words:", data.words?.length || 0);
     console.log('[OCR Worker] Recognition complete, words found:', data.words?.length || 0);
 
     // Parse Tesseract results
@@ -151,8 +169,8 @@ async function runTesseract(imageData: ImageData, options: RecognizeOptions): Pr
         box: {
           x: 0,
           y: 0,
-          width: imageData.width,
-          height: imageData.height
+          width: input instanceof Blob ? 0 : input.width,  // Blob doesn't have dimensions
+          height: input instanceof Blob ? 0 : input.height
         },
         type: 'tesseract'
       });
@@ -176,6 +194,7 @@ async function runTesseract(imageData: ImageData, options: RecognizeOptions): Pr
         }
       });
     }
+    console.log("═══ FINAL RESULTS:", results.length, "items ═══");
 
     console.log('[OCR Worker] Parsed results:', results.length);
     return results;
@@ -239,9 +258,10 @@ function cropImageData(
 
 /**
  * Main recognition function
+ * UPDATED: Now accepts HTMLCanvasElement or ImageData
  */
 async function recognizeImageData(
-  imageData: ImageData,
+  input: ImageData | Blob, // Accept both types
   options: RecognizeOptions = {},
   rois?: Array<{ x: number; y: number; width: number; height: number }>
 ): Promise<{ tesseract: OCRResult[]; tflite: OCRResult[] }> {
@@ -251,10 +271,24 @@ async function recognizeImageData(
   let tesseractResults: OCRResult[] = [];
   let tfliteResults: OCRResult[] = [];
 
+  // If input is Blob, process it directly (no ROI cropping needed - already cropped in main thread)
+  if (input instanceof Blob) {
+    console.log('[OCR Worker] Processing Blob directly (already cropped in main thread)');
+
+    if (mode === 'auto' || mode === 'tesseract') {
+      const results = await runTesseract(input, options);
+      tesseractResults = results;
+    }
+
+    // TFLite not supported for Blob yet
+    return { tesseract: tesseractResults, tflite: [] };
+  }
+
+  // ImageData path (backward compatibility)
   // Process full image or ROIs
   const imagesToProcess = rois && rois.length > 0
-    ? rois.map(roi => cropImageData(imageData, roi))
-    : [imageData];
+    ? rois.map(roi => cropImageData(input, roi))
+    : [input];
 
   for (const imgData of imagesToProcess) {
     if (mode === 'auto' || mode === 'tesseract') {
@@ -312,16 +346,23 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
         break;
 
       case 'recognize': {
-        if (!payload?.imageData) {
-          console.error('[OCR Worker] Missing imageData in recognize request');
-          throw new Error('Missing imageData in recognize request');
+        // Accept canvas (preferred) or imageData (backward compatibility)
+        const input = payload?.blob || payload?.imageData;
+
+        if (!input) {
+          console.error('[OCR Worker] Missing blob or imageData in recognize request');
+          throw new Error('Missing blob or imageData in recognize request');
         }
-        console.log('[OCR Worker] Starting recognition, image size:', payload.imageData.width, 'x', payload.imageData.height);
+
+        const inputType = input instanceof Blob ? 'Canvas' : 'ImageData';
+        console.log(`[OCR Worker] Starting recognition, input type: ${inputType}, size: ${input.size} bytes`);
+
         const results = await recognizeImageData(
-          payload.imageData,
+          input,
           payload.options || {},
           payload.rois
         );
+
         console.log('[OCR Worker] Recognition complete, results:', {
           tesseract: results.tesseract.length,
           tflite: results.tflite.length
