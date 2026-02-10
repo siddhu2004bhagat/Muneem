@@ -8,6 +8,12 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: true, // Allow access from LAN
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
     allowedHosts: [
       'localhost',
       '.local',

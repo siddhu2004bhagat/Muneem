@@ -8,6 +8,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { ReceiptView } from "@/features/reports/receipt/ReceiptView";
+import { DailyReportView } from "@/features/reports/receipt/DailyReportView";
 
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
@@ -19,6 +20,7 @@ const AppContent = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/print/receipt/:id" element={<ReceiptView />} />
+      <Route path="/print/daily-report" element={<DailyReportView />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

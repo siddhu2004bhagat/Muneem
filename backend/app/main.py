@@ -45,6 +45,8 @@ app.include_router(upi_router)
 app.include_router(upi_sync_router, prefix="/api/v1/upi")
 app.include_router(inventory_router)  # NEW: Register inventory router
 app.include_router(whatsapp_router)  # WhatsApp Business API
+from .api.v1.printer import router as printer_router
+app.include_router(printer_router)
 app.include_router(analytics_router)
 if FEDERATED_AVAILABLE and federated_router:
     app.include_router(federated_router)

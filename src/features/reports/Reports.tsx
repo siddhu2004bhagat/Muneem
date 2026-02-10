@@ -4,10 +4,11 @@ import { Card } from '@/components/ui/card';
 import { db, LedgerEntry } from '@/lib/db';
 import { formatCurrency, formatDate } from '@/lib/gst';
 import { toast } from 'sonner';
-import { FileText, Download, Printer } from 'lucide-react';
+import { FileText, Download, Printer, Usb } from 'lucide-react';
 import { saveAs } from 'file-saver';
+import { printerService } from '@/services/PrinterService';
 
-// Lazy-load jsPDF (which includes html2canvas) to reduce main bundle
+// Lazy-load jsPDF
 const loadJsPDF = async () => {
   const { default: jsPDF } = await import(/* webpackChunkName: "jspdf" */ 'jspdf');
   return jsPDF;
@@ -16,10 +17,17 @@ const loadJsPDF = async () => {
 export function Reports() {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [printerStatus, setPrinterStatus] = useState<{ status: string, port: string }>({ status: 'checking', port: '' });
 
   useEffect(() => {
     loadEntries();
+    checkPrinterStatus();
   }, []);
+
+  const checkPrinterStatus = async () => {
+    const status = await printerService.getStatus();
+    setPrinterStatus(status);
+  };
 
   async function loadEntries() {
     try {
@@ -211,6 +219,37 @@ export function Reports() {
         <h2 className="text-2xl font-bold bg-gradient-to-r from-[hsl(145_70%_32%)] to-[hsl(40_98%_48%)] bg-clip-text text-transparent">
           Reports & Analytics
         </h2>
+        <div className="flex gap-2">
+          {printerStatus.status === 'online' ? (
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-md text-xs font-medium">
+              <Printer className="w-3 h-3" />
+              Printer Online ({printerStatus.port})
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-1 bg-red-100 text-red-700 rounded-md text-xs font-medium">
+              <Printer className="w-3 h-3" />
+              Printer Offline
+            </div>
+          )}
+
+          <Button
+            onClick={() => {
+              const width = 400;
+              const height = 600;
+              const left = (window.screen.width - width) / 2;
+              const top = (window.screen.height - height) / 2;
+              window.open(
+                `/#/print/daily-report?autoprint=true`,
+                'DailyReportPrint',
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+              );
+            }}
+            className="bg-black text-white hover:bg-gray-800"
+          >
+            <Printer className="w-4 h-4 mr-2" />
+            Daily Report (58mm)
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
