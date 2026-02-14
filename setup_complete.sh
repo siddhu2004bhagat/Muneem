@@ -50,6 +50,8 @@ if [ ! -d "venv" ]; then
     sudo -u $CURRENT_USER python3 -m venv venv
 fi
 source venv/bin/activate
+# Upgrade build tools to handle Python 3.13 compilation
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 deactivate
 
