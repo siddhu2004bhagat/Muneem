@@ -24,6 +24,14 @@ echo -e "${BLUE}Running as user: $CURRENT_USER in $CURRENT_DIR${NC}"
 # 1. Update System and Install Dependencies
 echo -e "${YELLOW}Step 1: Installing System Dependencies...${NC}"
 apt update
+apt install -y curl
+
+# Ensure Node.js 18+ is available
+if ! command -v node &> /dev/null || [ "$(node -v | cut -d. -f1 | cut -dv -f2)" -lt 18 ]; then
+    echo -e "${YELLOW}Setting up Node.js 18.x repository...${NC}"
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
+fi
+
 apt install -y python3-pip python3-venv nodejs npm git \
     tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin \
     libtesseract-dev libleptonica-dev \

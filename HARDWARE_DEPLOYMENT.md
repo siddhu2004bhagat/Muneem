@@ -78,91 +78,45 @@ These are installed automatically by our scripts:
 
 ---
 
-### Step 2: Install System Dependencies
+### Step 2: One-Click Setup (Recommended)
 
-**Copy and paste this ONE command:**
+We have created a single script that installs all dependencies (System, Node.js, Python), builds the app, and configures the services automatically.
 
-```bash
-sudo apt update && sudo apt install -y \
-    python3.10 python3.10-venv python3-pip nodejs npm git \
-    tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin \
-    libtesseract-dev libleptonica-dev build-essential \
-    libgl1-mesa-glx libglib2.0-0 chromium-browser \
-    x11-xserver-utils unclutter
-```
-
-**Time:** 10-15 minutes
-
----
-
-### Step 3: Upgrade Node.js to Version 18+
+**Run these commands on your Pi:**
 
 ```bash
-# Install Node.js 18
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Verify version (should be 18.x.x or higher)
-node --version
-```
-
----
-
-### Step 4: Clone Repository
-
-```bash
-# Go to home directory
+# 1. Clone the repository
 cd ~
+git clone https://github.com/siddhu2004bhagat/Muneem.git
+cd Muneem
 
-# Clone the project
-git clone https://github.com/soni-pvt-ltd/DigBahi.git
-
-# Enter project directory
-cd DigBahi
+# 2. Run the Complete Setup Script
+chmod +x setup_complete.sh
+sudo ./setup_complete.sh
 ```
 
-**If repository is private, you'll be asked for username/password**
+**What this script does:**
+- ✅ Installs System Dependencies (Tesseract OCR, Python, etc.)
+- ✅ Sets up Node.js 18+
+- ✅ Builds the Frontend
+- ✅ Sets up Backend & OCR Services
+- ✅ Configures Kiosk Mode (Fullscreen)
+- ✅ Auto-reboots the system
+
+**Time:** ~15-20 minutes
 
 ---
 
-### Step 5: Run Installation Script
+### Step 3: Verify Installation (After Reboot)
 
-This installs all application dependencies automatically:
+The system will reboot automatically. When it comes back up, the application should launch in Kiosk mode.
 
+To manually check services:
 ```bash
-./install.sh
-```
-
-**What it does:**
-- ✅ Installs frontend dependencies (npm packages)
-- ✅ Creates Python virtual environment
-- ✅ Installs backend dependencies (Python packages)
-- ✅ Configures OCR service
-
-**Time:** 10-15 minutes
-
-**Expected output at the end:**
-```
-╔════════════════════════════════════════╗
-║   ✅ Installation Complete!           ║
-╚════════════════════════════════════════╝
-```
-
----
-
-### Step 6: Start Application
-
-```bash
-./start.sh
-```
-
-**Time:** 10-20 seconds
-
-**Expected output:**
-```
-✅ Backend API: http://localhost:8000 - Ready
-✅ Tesseract OCR: http://localhost:9000 - Ready
-✅ Frontend: http://localhost:5173 - Ready
+# Check service status
+systemctl status muneem-backend
+systemctl status muneem-ocr
+systemctl status muneem-frontend
 ```
 
 ---
