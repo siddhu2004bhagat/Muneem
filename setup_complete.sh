@@ -35,8 +35,7 @@ fi
 apt install -y python3-pip python3-venv nodejs npm git \
     tesseract-ocr tesseract-ocr-eng tesseract-ocr-hin \
     libtesseract-dev libleptonica-dev \
-    x11-xserver-utils unclutter chromium-browser \
-    libgl1-mesa-glx # OpenCV dependency if needed
+    x11-xserver-utils unclutter chromium libgl1
 
 # 2. Install Node.js Dependencies and Build Frontend
 echo -e "${YELLOW}Step 2: Building Frontend...${NC}"
@@ -107,7 +106,13 @@ until curl -s http://localhost:8000/api/v1/health > /dev/null; do
 done
 
 # Launch Chromium in Kiosk Mode
-chromium-browser --kiosk --noerrdialogs --disable-infobars \
+# Detect correct binary
+CHROMIUM_BIN=chromium
+if command -v chromium-browser &> /dev/null; then
+    CHROMIUM_BIN=chromium-browser
+fi
+
+$CHROMIUM_BIN --kiosk --noerrdialogs --disable-infobars \
     --check-for-update-interval=31536000 \
     --disable-restore-session-state \
     --disable-session-crashed-bubble \
