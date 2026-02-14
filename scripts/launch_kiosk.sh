@@ -24,13 +24,18 @@ done
 # Find chromium binary
 CHROMIUM_CMD=$(command -v chromium-browser || command -v chromium || echo "chromium")
 
-# Launch Chromium in kiosk mode
+# Launch Chromium in kiosk mode with touch/pointer events enabled
 $CHROMIUM_CMD \
     --kiosk \
+    --touch-events=enabled \
+    --enable-features=TouchpadOverscrollHistoryNavigation \
+    --force-device-scale-factor=1 \
     --noerrdialogs \
     --disable-infobars \
     --no-first-run \
     --disable-session-crashed-bubble \
     --disable-restore-session-state \
+    --disable-pinch \
+    --overscroll-history-navigation=0 \
     --autoplay-policy=no-user-gesture-required \
     http://localhost:5173
