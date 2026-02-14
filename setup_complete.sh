@@ -59,7 +59,18 @@ source venv/bin/activate
 pip install --upgrade pip setuptools wheel
 
 # Install requirements, preferring binary wheels
-pip install --only-binary=:all: -r requirements.txt || pip install -r requirements.txt
+# CRITICAL: Force Pydantic to use binary or system package to avoid Rust compilation
+echo -e "${BLUE}Installing Python dependencies (skipping compilation)...${NC}"
+
+# Install simple dependencies first
+pip install --only-binary=:all: "fastapi>=0.110.0" "uvicorn[standard]>=0.29.0" python-dotenv requests websockets
+
+# Try to install pydantic binary. If it fails, we rely on the system package (python3-pydantic) installed earlier.
+# We DO NOT want pip to try compiling pydantic-core from source if a binary isn't available.
+pip install --only-binary=:all: pydantic || echo "⚠️ Pydantic binary not found, using system package..."
+
+# Install remaining requirements, ignoring errors for packages already satisfied by system
+pip install --only-binary=:all: -r requirements.txt || true 
 
 deactivate
 

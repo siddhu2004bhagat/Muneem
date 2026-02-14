@@ -19,8 +19,9 @@ passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
 
 # Validation
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
+pydantic
+pydantic-settings
+typing_extensions>=4.6.1
 
 # WebSocket support
 websockets==12.0
