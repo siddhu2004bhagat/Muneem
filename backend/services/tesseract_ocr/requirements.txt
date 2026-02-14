@@ -7,11 +7,11 @@ fastapi==0.110.0
 uvicorn[standard]==0.29.0
 
 # Image Processing
-Pillow==10.2.0
-opencv-python==4.6.0.66
+Pillow>=10.3.0
+opencv-python>=4.8.0.76
 
 # OCR Engine
 pytesseract==0.3.10
 
 # Utilities
-numpy>=1.24.0
+numpy>=1.26.0

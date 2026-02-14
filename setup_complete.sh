@@ -83,6 +83,10 @@ cd ..
 
 # 4. Setup OCR Service Environment
 echo -e "${YELLOW}Step 4: Setting up OCR Service...${NC}"
+
+# Install system dependencies for image processing to avoid compilation
+sudo apt install -y python3-pil python3-numpy python3-opencv
+
 cd backend/services/tesseract_ocr
 
 # Remove old venv if it exists without system packages
