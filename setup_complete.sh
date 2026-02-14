@@ -84,11 +84,23 @@ cd ..
 # 4. Setup OCR Service Environment
 echo -e "${YELLOW}Step 4: Setting up OCR Service...${NC}"
 cd backend/services/tesseract_ocr
-if [ ! -d "venv" ]; then
-    sudo -u $CURRENT_USER python3 -m venv venv
+
+# Remove old venv if it exists without system packages
+if [ -d "venv" ]; then
+    rm -rf venv
 fi
+
+if [ ! -d "venv" ]; then
+    sudo -u $CURRENT_USER python3 -m venv venv --system-site-packages
+fi
+
 source venv/bin/activate
-pip install -r requirements.txt
+pip install --upgrade pip setuptools wheel
+
+# Install with binary preference to avoid compilation (especially for opencv/numpy/pydantic)
+echo -e "${BLUE}Installing OCR dependencies (skipping compilation)...${NC}"
+pip install --only-binary=:all: -r requirements.txt || pip install -r requirements.txt
+
 deactivate
 cd ../../..
 
