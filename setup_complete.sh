@@ -45,14 +45,22 @@ sudo -u $CURRENT_USER npm run build
 
 # 3. Setup Backend Environment
 echo -e "${YELLOW}Step 3: Setting up Backend...${NC}"
+
+# Install system-level python dependencies to act as fallbacks/pre-built wheels
+sudo apt install -y python3-pydantic python3-cryptography python3-sqlalchemy
+
 cd backend
 if [ ! -d "venv" ]; then
-    sudo -u $CURRENT_USER python3 -m venv venv
+    sudo -u $CURRENT_USER python3 -m venv venv --system-site-packages
 fi
 source venv/bin/activate
-# Upgrade build tools to handle Python 3.13 compilation
+
+# Upgrade build tools
 pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
+
+# Install requirements, preferring binary wheels
+pip install --only-binary=:all: -r requirements.txt || pip install -r requirements.txt
+
 deactivate
 
 # Setup .env if missing
