@@ -563,7 +563,7 @@ function PenCanvasInner({ onRecognized, onClose }: PenCanvasProps) {
         <div
           ref={containerRef}
           className="relative overflow-y-auto overflow-x-hidden rounded-xl border-2 border-border shadow-lg bg-white virtual-scroll-container"
-          style={{ height: '500px' }}
+          style={{ height: 'calc(100vh - 300px)', minHeight: '400px', maxHeight: '800px' }}
         >
           {/* Drawing hint */}
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center select-none" style={{ opacity: 0.1 }}>
