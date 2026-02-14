@@ -12,7 +12,7 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${BLUE}Starting Muneem Kiosk Setup...${NC}"
+echo -e "${BLUE}Starting Muneem Kiosk Setup (v1.1)...${NC}"
 echo -e "${YELLOW}This script will install dependencies, configure services, and setup Kiosk mode.${NC}"
 
 # Get current directory
