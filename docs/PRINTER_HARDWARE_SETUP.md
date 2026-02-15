@@ -44,33 +44,30 @@ Raspberry Pi GPIO Header (Top View)
 
 ## ⚙️ Step 2: Enable UART on Raspberry Pi
 
-### Method 1: Using `raspi-config` (Recommended)
-```bash
-sudo raspi-config
-```
+### 🍓 Raspberry Pi 5 Users (IMPORTANT)
+On Pi 5, the default `serial0` points to a dedicated debug connector, NOT the GPIO pins.
 
-1. Select **"Interface Options"**
-2. Select **"Serial Port"**
-3. **Login shell over serial?** → Select **"No"**
-4. **Serial port hardware enabled?** → Select **"Yes"**
-5. Exit and reboot: `sudo reboot`
+1. **Edit Config:**
+   ```bash
+   sudo nano /boot/firmware/config.txt
+   ```
+2. **Add to bottom:**
+   ```ini
+   dtparam=uart0=on
+   dtoverlay=disable-bt
+   ```
+3. **Reboot:** `sudo reboot`
+4. **Use Port:** `/dev/ttyAMA0` (Update this in your `.env` file)
 
-### Method 2: Manual Configuration
-Edit `/boot/config.txt`:
-```bash
-sudo nano /boot/config.txt
-```
-
-Add these lines at the end:
-```
-enable_uart=1
-dtoverlay=disable-bt
-```
-
-Save and reboot:
-```bash
-sudo reboot
-```
+### 🍓 Raspberry Pi 4 / 3 Users
+1. **Run Config Tool:**
+   ```bash
+   sudo raspi-config
+   ```
+2. **Navigate:** Interface Options → Serial Port
+3. **Login shell?** → **No**
+4. **Hardware enabled?** → **Yes**
+5. **Reboot:** `sudo reboot` // or manually edit `/boot/config.txt` and add `enable_uart=1`
 
 ---
 
@@ -99,8 +96,13 @@ nano .env
 ```
 
 Add these lines:
-```
-PRINTER_PORT=/dev/serial0
+```ini
+# For Raspberry Pi 5:
+PRINTER_PORT=/dev/ttyAMA0
+
+# For Raspberry Pi 4/3:
+# PRINTER_PORT=/dev/serial0
+
 PRINTER_BAUDRATE=9600
 ```
 
@@ -142,6 +144,10 @@ Click **"Daily Report (58mm)"** button. A popup should appear and the printer sh
 **Check 1: Verify wiring**
 ```bash
 # Test if data is being sent to serial port
+# For Pi 5:
+echo "Test" > /dev/ttyAMA0
+
+# For Pi 4:
 echo "Test" > /dev/serial0
 ```
 Watch the printer — LED should blink or flicker.
