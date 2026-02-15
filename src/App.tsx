@@ -12,7 +12,15 @@ import { DailyReportView } from "@/features/reports/receipt/DailyReportView";
 
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
 
 const AppContent = () => {
   useGlobalShortcuts();
