@@ -3,10 +3,19 @@ import os
 import base64
 from typing import Optional
 
+from dotenv import load_dotenv
+
+# Explicitly load .env from backend root
+# working directory is usually backend/ so .env is in CWD
+load_dotenv()
+
 class SerialPrinter:
     def __init__(self):
         self.port = os.getenv("PRINTER_PORT", "/dev/serial0")
         self.baudrate = int(os.getenv("PRINTER_BAUDRATE", "9600"))
+        
+        print(f"🖨️ Printer Service Config: Port={self.port}, Baud={self.baudrate}") # Debug log
+
         self.timeout = 1
         self._connection: Optional[serial.Serial] = None
 
